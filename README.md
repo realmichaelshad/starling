@@ -13,8 +13,8 @@ posts in your voice. The draft is typed into X's own text box and Starling stops
 post it or throw it away. It never presses Post, likes, follows or sends messages.
 
 This repository is the whole product: the extension, the service, the website, the deployment files,
-the tests and the documentation. It ran as a free public beta in autumn 2026 and is published here
-under the MIT license.
+the tests and the documentation. It ran for a few days as a free public beta in autumn 2026 and is
+published here under the MIT license.
 
 **See it:** [the product demo on YouTube](https://www.youtube.com/watch?v=QJUr3JpdA3s) and
 [a copy of the website](https://starling-demo-ten.vercel.app) with sign-up turned off.
@@ -206,9 +206,10 @@ follow [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Status and limitations
 
-- **There is no hosted Starling to sign up for.** The beta ran on Fly.io in autumn 2026 with the
-  Anthropic provider (Claude Haiku 5.5), web search off and the free plan only. That deployment has
-  been taken down. To use Starling you run your own instance.
+- **There is no hosted Starling to sign up for.** The beta ran on Fly.io for under a week in autumn
+  2026, with the Anthropic provider (Claude Haiku 5.5), web search off and the free plan only. It
+  never had outside customers, and that deployment has been taken down. To use Starling you run
+  your own instance.
 - **Payments have never been taken.** The billing code is tested against the stand-in Stripe in this
   repository. It has not been run against Stripe itself, in a sandbox or live, so do that before you
   charge anyone ([docs/PAYMENTS.md](docs/PAYMENTS.md)).
