@@ -1,0 +1,63 @@
+{#- GET /account/data, POST /account/export, POST /account/delete
+    Extra context: errors (dict or null); sign_in (see account/security.html: has_password, recent, reauth_url);
+    plan (null, or {name, is_paid, period_end, cancel_at}: what deleting does to a paid plan).
+    Export form: general key "export".
+    Delete form fields: delete_password (only when the account has a password), delete_confirmation
+    (must equal "DELETE"); general key "delete". An account made with Google confirms by having signed
+    in within the last 10 minutes, and is offered "Confirm with Google" after that. -#}
+{% extends "_account_layout.html" %}
+{% block title %}Your data · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, google_mark, input_field, local_date with context %}
+{% set pl = plan if plan is defined and plan else {} %}
+{% set si = sign_in if sign_in is defined and sign_in else {} %}
+{% set has_password = si.has_password is not defined or si.has_password %}
+{% set can_confirm = si.recent is defined and si.recent %}
+<h1>Your data</h1>
+<p class="lead">Download a copy of your data, or delete your account and the data Starling keeps about you.</p>
+
+<section class="panel" aria-labelledby="export-title">
+  <h2 id="export-title">Export your data</h2>
+  <p>Download a file with your account details and the data Starling keeps for drafting: writing samples, confirmed preferences, draft outcomes and, if you turned on the optional learning choice, your own profile and post stats.</p>
+  <form method="post" action="/account/export#export-title" data-download>
+    {{ csrf() }}
+    {{ error_summary(errors, [], general="export", title="The export did not work") }}
+    <button class="btn btn-secondary" type="submit">Download my data</button>
+    <p class="muted small" role="status" data-download-status></p>
+  </form>
+</section>
+
+<section class="panel" aria-labelledby="delete-title">
+  <h2 id="delete-title">Delete your account</h2>
+  <p>This permanently deletes your account and the data Starling keeps for drafting. It cannot be undone.</p>
+  <ul>
+    <li>Every connected browser is disconnected.</li>
+    {% if pl.is_paid is defined and pl.is_paid %}
+    <li>You are on {{ pl.name }}{% if pl.period_end %} until {{ local_date(pl.period_end) }}{% endif %}. Deleting now cancels it today, so you are not charged again, and the part of the period you have not used is not refunded. To keep {{ pl.name }} until then, cancel from <a href="/account/billing">Billing</a> and delete afterwards.</li>
+    {% elif pl.is_paid is not defined %}
+    <li>Your subscription is cancelled at once, so you are not charged again. The part of a paid period you have not used is not refunded, so cancel from <a href="/account/billing">Billing</a> instead if you want to keep your plan until the period ends.</li>
+    {% endif %}
+    <li>Your writing samples, preferences, draft outcomes and stats are deleted from the live service. Encrypted backups are not edited; they age out within about three months.</li>
+    <li>Billing records that must be kept for legal and tax reasons are kept, as the <a href="/privacy">Privacy Policy</a> explains.</li>
+  </ul>
+  <p>You may want to export your data first.</p>
+  {% if has_password or can_confirm %}
+  <form class="form" method="post" action="/account/delete#delete-title" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["delete_password", "delete_confirmation"], general="delete") }}
+    {% if has_password %}
+    {{ input_field("delete_password", "Current password", type="password", autocomplete="current-password", errors=errors) }}
+    {% endif %}
+    {{ input_field("delete_confirmation", "Type DELETE to confirm", autocomplete="off", errors=errors, spellcheck=false) }}
+    <div><button class="btn btn-danger" type="submit">Delete my account permanently</button></div>
+  </form>
+  {% else %}
+  {{ error_summary(errors, ["delete_confirmation"], general="delete") }}
+  <div class="notice">
+    <p class="notice-title">Confirm it is you</p>
+    <p>You sign in with Google, so there is no password to check. Confirm with Google first; you come straight back here to finish.</p>
+    <p><a class="btn-google" href="{{ si.reauth_url }}" data-busy-link>{{ google_mark() }}<span>Confirm with Google</span></a></p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

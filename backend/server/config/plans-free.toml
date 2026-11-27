@@ -1,0 +1,14 @@
+# Starling plans for a free-only launch: point PLANS_FILE at this file to run with no paid plan
+# and no Stripe account. Switch back to plans.toml when the paid plans go live.
+
+[unit]
+name = "draft"
+label = "drafts"
+
+[plans.free]
+name = "Free"
+monthly_credits = 25
+cost_ceiling_usd = 0.30
+rate_per_minute = 3
+rate_per_day = 10
+public = true

@@ -1,0 +1,18 @@
+{#- GET/POST /admin/elevate (auth/routes.py): confirm an authenticator code for 15 minutes of owner access.
+    Extra context: errors (dict; field code, general "form"), next (same-origin path).
+    POST fields: csrf_token, code, next. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Confirm it is you · Owner dashboard · Starling{% endblock %}
+{% block elevation %}{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, input_field with context %}
+<h1>Confirm it is you</h1>
+<p class="lead">Enter the code from your authenticator app. It opens the owner dashboard for 15 minutes, then you are asked again.</p>
+<form class="form" method="post" action="/admin/elevate" novalidate>
+  {{ csrf() }}
+  <input type="hidden" name="next" value="{{ next }}">
+  {{ error_summary(errors, ["code"]) }}
+  {{ input_field("code", "6-digit code", autocomplete="one-time-code", errors=errors, inputmode="numeric", maxlength="6", spellcheck=false) }}
+  <div><button class="btn" type="submit">Continue</button></div>
+</form>
+{% endblock %}

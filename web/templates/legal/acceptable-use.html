@@ -1,0 +1,40 @@
+{#- GET /acceptable-use  Extra context: subprocessors. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Acceptable use policy · Starling{% endblock %}
+{% block description %}What you may not use Starling for, and what happens when this policy is broken.{% endblock %}
+{% block heading %}Acceptable use policy{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<p>Starling helps you write your own posts. This policy applies to everything you create or send with Starling and forms part of the <a href="/terms">Terms of Service</a>. You remain responsible for what you post.</p>
+
+<h2 id="not-allowed">Do not use Starling to</h2>
+<ul>
+  <li>send spam, bulk or repetitive content, or run coordinated or inauthentic activity on X;</li>
+  <li>harass, threaten, bully or incite hatred or violence against anyone;</li>
+  <li>impersonate a person or organisation, or mislead people about who is speaking;</li>
+  <li>spread false information that could cause real harm, or interfere with elections or civic processes;</li>
+  <li>create or share illegal content, including any content that sexualises minors;</li>
+  <li>infringe someone else's copyright, trademark or other rights;</li>
+  <li>share someone's private information without their permission;</li>
+  <li>promote scams, phishing or malware;</li>
+  <li>break X's terms, rules or policies, including its rules on platform manipulation and automation.</li>
+</ul>
+
+<h2 id="service">Do not misuse the service</h2>
+<ul>
+  <li>Do not create extra accounts to get more free allowance, share an account, or resell access.</li>
+  <li>Do not try to get around rate limits, usage limits or other protections.</li>
+  <li>Do not probe, scan or test the security of Starling without written permission, or try to access other customers' data.</li>
+  <li>Do not overload, disrupt, scrape or reverse engineer the service, or try to extract its prompts or internal instructions.</li>
+</ul>
+
+<h2 id="ai">AI content</h2>
+<p>Review drafts before posting and correct anything inaccurate. Disclose that content was made with AI where the law or X's rules require it.</p>
+
+<h2 id="enforcement">Enforcement</h2>
+<p>If we believe this policy has been broken, we may remove access to features, suspend or close the account, and report illegal activity to the authorities. Where appropriate, we will tell you what happened and how to respond.</p>
+
+<h2 id="report">Reporting abuse</h2>
+<p>To report misuse of Starling, email {{ legal_email(L.OPERATOR_CONTACT_EMAIL) }}. For security issues, see <a href="/.well-known/security.txt">security.txt</a>.</p>
+{% endblock %}

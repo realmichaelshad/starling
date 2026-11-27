@@ -1,0 +1,70 @@
+# Every push and pull request: the three Python test suites on the locked, hash-checked
+# dependencies the container image installs, and the extension's types, unit tests and build.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Server, engine and website tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.lock
+            backend/requirements-dev.txt
+      - name: Install the locked runtime packages, then the test tools constrained by the lock
+        run: |
+          python -m pip install --disable-pip-version-check --require-hashes --only-binary=:all: -r backend/requirements.lock
+          sed -e '/--hash=/d' -e 's/[[:space:]]*\$//' backend/requirements.lock > "$RUNNER_TEMP/constraints.txt"
+          python -m pip install --disable-pip-version-check -c "$RUNNER_TEMP/constraints.txt" -r backend/requirements-dev.txt
+      - name: Server tests
+        working-directory: backend/server
+        run: python -m pytest tests -q -p no:cacheprovider
+      - name: Engine tests
+        working-directory: backend/engine
+        run: python -m pytest tests -q -p no:cacheprovider
+      - name: Website tests
+        run: python -m pytest web/tests -q -p no:cacheprovider
+
+  extension:
+    name: Extension types, unit tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: extension
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: extension/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm test
+      # A plain build needs the https address of a real service. The e2e mode builds against a local
+      # one (extension/.env.e2e), and the verifier then checks the package the way a release would.
+      - name: Build against a local service address and check the package
+        run: |
+          pnpm build --mode e2e
+          node scripts/verify-extension-build.mjs .output --allow-local

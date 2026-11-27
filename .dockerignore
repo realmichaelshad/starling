@@ -1,0 +1,47 @@
+# Build context for deploy/Dockerfile (context = repository root). The image copies only named
+# folders; this file keeps the context small and keeps secrets and local data out of it entirely.
+
+# Version control and local tooling
+.git
+.gitignore
+.claude
+.idea
+.vscode
+
+# Secrets and local configuration (the template stays)
+**/.env
+**/.env.*
+!.env.example
+
+# Runtime data, archives and logs (root-level folders only: backend/engine/app/data is source)
+data
+backups
+outbox
+**/*.db
+**/*.db-wal
+**/*.db-shm
+**/*.db-journal
+**/*.sqlite
+**/*.sqlite3
+**/*.sbk
+**/*.partial
+**/*.log
+
+# Python caches and virtual environments
+**/__pycache__
+**/*.py[cod]
+**/.pytest_cache
+**/.venv
+**/venv
+**/.mypy_cache
+**/.ruff_cache
+
+# JavaScript dependencies, extension build outputs and end-to-end test results
+**/node_modules
+extension/.output
+extension/.output-*
+extension/.wxt
+extension/dist
+e2e/test-results
+e2e/playwright-report
+e2e/.run

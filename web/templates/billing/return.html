@@ -1,0 +1,88 @@
+{#- GET /billing/return (Stripe Checkout success URL). This page grants nothing (CONTRACTS 8).
+    Extra context: session_status (open | pending | complete | expired | not_found), state (CONTRACTS 6.2).
+    While the plan is not applied yet, static/js/billing-return.js polls /billing/status and reloads;
+    without JavaScript a <noscript> meta refresh reloads every 5 seconds.
+    A payment that was declined or still needs the customer (`state.plan.payment_issue.kind` is
+    `first_payment`) is NOT pending: nothing will arrive by waiting, so the page says so and offers
+    the way to finish it instead of "confirming" for two minutes. -#}
+{% extends "base.html" %}
+{% block title %}Your subscription · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% set issue = state.plan.payment_issue if state.plan.payment_issue is defined and state.plan.payment_issue else none %}
+{% set unfinished = issue is not none and issue.kind == "first_payment" and state.plan.code == "free" %}
+{% set pending = not unfinished and (session_status in ["open", "pending"] or (session_status == "complete" and state.plan.code == "free")) %}
+{% block head %}
+{% if pending %}
+<noscript><meta http-equiv="refresh" content="5"></noscript>
+{% endif %}
+{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, local_date with context %}
+<div class="narrow">
+  {% if unfinished %}
+  <header class="page-header" data-billing-return="unfinished">
+    <p class="eyebrow">Subscription</p>
+    <h1>Your payment is not finished</h1>
+    <p class="lead">Stripe could not complete the payment{{ " for " ~ issue.plan_name if issue.plan_name }}, so you have not been charged and you are still on Free.</p>
+  </header>
+  <p>This can happen when a card is declined or your bank asks you to confirm the payment. You can finish it now on Stripe's secure page{{ ", or choose a different plan from the Billing page" if issue.plan_code }}.</p>
+  <div class="button-row">
+    {% if issue.plan_code %}
+    <form method="post" action="/billing/checkout">
+      {{ csrf() }}
+      <input type="hidden" name="plan_code" value="{{ issue.plan_code }}">
+      <button class="btn" type="submit">Finish paying for {{ issue.plan_name }}</button>
+    </form>
+    {% endif %}
+    <a class="btn btn-secondary" href="/account/billing">Go to Billing</a>
+  </div>
+  {% elif pending %}
+  <div data-billing-poll data-status-url="/billing/status" data-initial-plan="{{ state.plan.code }}" data-initial-status="{{ state.plan.status }}" data-initial-problem="{{ "true" if state.plan.payment_problem else "false" }}" data-status-id="billing-status">
+    <header class="page-header">
+      <p class="eyebrow">Subscription</p>
+      <h1>Confirming your subscription</h1>
+      <p class="lead">We are waiting for Stripe to confirm your subscription. This usually takes a few seconds.</p>
+    </header>
+    <p id="billing-status" role="status" aria-live="polite">This page updates by itself when your plan is ready.</p>
+    <p>You can close this page. Your plan is applied as soon as the confirmation arrives, and the <a href="/account/billing">Billing page</a> shows the result.</p>
+  </div>
+  {% elif session_status == "complete" %}
+  <header class="page-header">
+    <p class="eyebrow">Subscription</p>
+    <h1>You are on {{ state.plan.name }}</h1>
+    <p class="lead">Thanks for subscribing. You have {{ state.usage.remaining|number }} {{ state.usage.unit_label }} available until {{ local_date(state.usage.resets_at) }}.</p>
+  </header>
+  <div class="button-row">
+    <a class="btn" href="/account">Go to your account</a>
+    <a class="btn btn-secondary" href="/docs/getting-started">Set up the extension</a>
+  </div>
+  <p class="small muted">Invoices are available from the <a href="/account/billing">Billing page</a>.</p>
+  {% elif session_status == "expired" %}
+  <header class="page-header">
+    <p class="eyebrow">Subscription</p>
+    <h1>Checkout expired</h1>
+    <p class="lead">The checkout session ended before payment was completed. You have not been charged.</p>
+  </header>
+  <div class="button-row">
+    <a class="btn" href="/pricing">Choose a plan again</a>
+    <a class="btn btn-secondary" href="/account">Go to your account</a>
+  </div>
+  {% else %}
+  <header class="page-header">
+    <p class="eyebrow">Subscription</p>
+    <h1>We could not find that checkout</h1>
+    <p class="lead">If you completed a payment, your plan appears on the Billing page within a few minutes.</p>
+  </header>
+  <div class="button-row">
+    <a class="btn" href="/account/billing">Go to Billing</a>
+    <a class="btn btn-secondary" href="/contact">Contact support</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+{% if pending %}
+<script src="{{ static('js/billing-return.js') }}" defer></script>
+{% endif %}
+{% endblock %}

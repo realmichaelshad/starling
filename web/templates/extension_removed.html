@@ -1,0 +1,23 @@
+{#- GET /extension/removed (the extension's uninstall URL). No extra context. -#}
+{% extends "base.html" %}
+{% block title %}Starling was removed · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">Extension</p>
+    <h1>Starling was removed from Chrome</h1>
+    <p class="lead">The extension is gone from this browser. Your Starling account has not changed.</p>
+  </header>
+  <ul>
+    <li><strong>On a paid plan?</strong> Removing the extension does not cancel your subscription. To stop paying, cancel from <a href="/account/billing">Billing</a>.</li>
+    <li><strong>Your data</strong> stays in your account until you delete it. Export or delete it from <a href="/account/data">Your data</a>.</li>
+    <li><strong>Connected browsers</strong> are listed under <a href="/account/devices">Devices</a>, where you can disconnect this one.</li>
+  </ul>
+  {% from "_macros.html" import store_button with context %}
+  <p>Changed your mind? You can add it back at any time, and it picks up where you left off.</p>
+  <div class="button-row">{{ store_button(secondary=true, label="Add Starling back to Chrome") }}</div>
+  <p>Did something not work as expected? <a href="/contact">Tell us</a>.</p>
+</div>
+{% endblock %}

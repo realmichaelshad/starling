@@ -1,0 +1,47 @@
+{#- GET/POST /forgot-password
+    Extra context: sent (bool); errors (fields email, general "form"); form (email: the address as typed,
+    repeated on the sent page so a typo shows and a second send needs no retyping); mail_link (null or
+    {label, url}: the webmail for that address). The confirmation never reveals whether an account
+    exists. POST fields: csrf_token, email. -#}
+{% extends "base.html" %}
+{% block title %}Reset your password · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, error_summary, input_field with context %}
+{% set errs = errors if errors is defined else none %}
+{% set frm = form if form is defined and form else {} %}
+<div class="narrow">
+  {% if sent %}
+  <header class="page-header">
+    <p class="eyebrow">Reset your password</p>
+    <h1>Check your email</h1>
+    <p class="lead">If there is a Starling account for <strong class="address">{{ frm.email }}</strong>, we sent it a link to choose a new password. The link works for 60 minutes.</p>
+  </header>
+  <div class="button-row">
+    {% if mail_link is defined and mail_link %}
+    <a class="btn btn-secondary" href="{{ mail_link.url }}" target="_blank" rel="noopener">{{ mail_link.label }}</a>
+    {% endif %}
+    <form method="post" action="/forgot-password" data-resend-form>
+      {{ csrf() }}
+      <input type="hidden" name="email" value="{{ frm.email }}">
+      <button class="link-button" type="submit" data-resend-button>Send the link again</button>
+    </form>
+  </div>
+  <p class="muted small">No email? Check your spam folder. Wrong address? <a href="/forgot-password">Enter it again</a>.</p>
+  <p class="form-footer"><a href="/login">Back to sign in</a></p>
+  {% else %}
+  <header class="page-header">
+    <h1>Reset your password</h1>
+    <p class="lead">Enter the email address on your account and we will send you a reset link.</p>
+  </header>
+  <form class="form" method="post" action="/forgot-password" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errs, ["email"]) }}
+    {{ input_field("email", "Email address", type="email", autocomplete="email", value=(frm.email if frm.email is defined else ""), errors=errs, spellcheck=false, inputmode="email", autofocus=true) }}
+    <div><button class="btn" type="submit">Send reset link</button></div>
+  </form>
+  <p class="form-footer"><a href="/login">Back to sign in</a></p>
+  {% endif %}
+</div>
+{% endblock %}

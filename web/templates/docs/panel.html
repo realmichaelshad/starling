@@ -1,0 +1,48 @@
+{% extends "_docs_layout.html" %}
+{% block title %}The Starling panel · Starling docs{% endblock %}
+{% block description %}Use the Starling panel beside X to chat, ask about a post, get topic ideas and manage your writing samples.{% endblock %}
+{% block content %}
+<h1>The Starling panel</h1>
+<p class="lead">The panel sits beside X. Use it to chat with Starling, ask about a post, get topic ideas and manage your writing samples.</p>
+
+<h2 id="open">Open and close the panel</h2>
+<ul>
+  <li>On x.com, click the Starling icon in Chrome's toolbar, or press <kbd>Alt</kbd>+<kbd>F</kbd>.</li>
+  <li>Close it with its close button, the same shortcut, or <kbd>Esc</kbd>.</li>
+</ul>
+<p>If the extension is not connected to your account, the panel shows a Sign in button. See <a href="/docs/getting-started#connect">Connect the extension</a>.</p>
+
+<h2 id="chat">Chat</h2>
+<p>Type in the message box and press <kbd>Enter</kbd>. Answers appear as they are written, and you can stop an answer part way. A message can be up to 2,000 characters long.</p>
+<p>Some things to ask:</p>
+<ul>
+  <li>"Should I reply to this?" with a post attached</li>
+  <li>"Turn this idea into a post: …"</li>
+  <li>"Give me post ideas for today"</li>
+  <li>"Make my draft shorter"</li>
+</ul>
+<p>Each answer Starling returns uses a draft from your allowance, just like a draft in the composer.</p>
+
+<h2 id="attach">Ask about a specific post</h2>
+<p>Every post on X gets a small paperclip button labelled "Attach this post to Starling chat". It adds the post to the panel so you can ask about it. The ✦ button beside it asks Starling straight away whether to reply, quote or wait.</p>
+
+<h2 id="ideas">Topic ideas</h2>
+<p>Ask the panel for ideas when you want to post but do not have a subject. Starling suggests timely topics from your own niche, each with a short reason and the pages it found them on, and can draft a post from the one you pick.</p>
+<p class="notice">Post ideas follow your own niche: Starling looks for what is new in it, in news feeds{% if site.web_search is defined and site.web_search %} and web searches{% endif %}, and cites the pages it used. Replies, quotes, rewrites and chat work on any post.</p>
+
+<h2 id="samples">Writing samples</h2>
+<p>The quickest way to a draft that sounds like you: open your own profile on X, then in the panel's Settings press <strong>Add my posts from this page</strong>. It adds the posts of yours that X has loaded there, never anyone else's, and never posts anything; scroll down and press again for more. You can also paste examples of your writing one at a time. The panel lists the samples Starling keeps, and you can remove any of them. A removed sample is no longer used for new drafts.</p>
+
+<h2 id="preferences">Preferences</h2>
+<p>When you tell Starling how you like to write, such as "never use hashtags", it may ask whether to remember that. Nothing is kept unless you confirm.</p>
+
+<h2 id="status">Status messages</h2>
+<p>The panel explains when it cannot draft, for example when you are signed out, your allowance is used up or the service is busy. Each message says what to do next, and the <a href="/docs/troubleshooting">Troubleshooting guide</a> lists them all.</p>
+
+<h2 id="keyboard">Keyboard</h2>
+<ul>
+  <li><kbd>Enter</kbd> sends a message, and <kbd>Shift</kbd>+<kbd>Enter</kbd> starts a new line.</li>
+  <li><kbd>Esc</kbd> closes the top layer first, then the panel.</li>
+  <li>Typing in the panel does not trigger X's own keyboard shortcuts.</li>
+</ul>
+{% endblock %}

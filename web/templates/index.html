@@ -1,0 +1,368 @@
+{#- GET /
+    Extra context: plans = public plans from web/render.py plan_dict (code, name, monthly_credits,
+    amount_cents, currency, interval, is_paid, price_label, rate_per_minute, rate_per_day).
+    Optional: unit {name, label} (the gateway does not send it for this page yet; the fallback is
+    "draft" / "drafts").
+
+    The page is the original Starling landing page rebuilt for the hosted product: the hero with the
+    huge wordmark, the flowing menu, the pinned "How it works" set-piece with the X-plus-panel mock,
+    then privacy, plans, questions and the closing call to action. Styles are in static/css/home.css,
+    behaviour in static/js/home.js. Everything is complete without JavaScript: entrance states only
+    exist under html.js, the pinned section is a normal stacked section until home.js turns it on,
+    and the mock's markup below is its finished state. No style attributes (the CSP forbids them):
+    stagger delays are the classes d1 to d8.
+
+    Plans, prices and allowances come from `plans` and `unit`; nothing here hard-codes them. The
+    numbers inside the mock are part of an illustration of the extension's footer line. -#}
+{% extends "base.html" %}
+{% block title %}Starling: X drafts in your own voice{% endblock %}
+{% block description %}Starling is a Chrome extension with a hosted service that drafts replies, quotes and posts on X in your own voice. You review every draft and press Post yourself.{% endblock %}
+{% block body_class %}home{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static('css/home.css') }}">
+<script src="{{ static('js/home.js') }}" defer></script>
+{% set ld = namespace(offers=[], currency="USD") %}
+{% for plan in plans if plan.amount_cents > 0 and plan.currency %}{% if loop.first %}{% set ld.currency = plan.currency|upper %}{% endif %}{% endfor %}
+{% for plan in plans %}
+{% set ld.offers = ld.offers + [{"@type": "Offer", "name": plan.name, "price": "%.2f"|format(plan.amount_cents / 100), "priceCurrency": plan.currency|upper if plan.currency else ld.currency}] %}
+{% endfor %}
+<script type="application/ld+json">{{ {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": site.name,
+  "url": site.public_url ~ "/",
+  "image": site.public_url ~ static("img/og.png"),
+  "applicationCategory": "BrowserApplication",
+  "operatingSystem": "Google Chrome 120 or later (desktop)",
+  "description": "A Chrome extension with a hosted service that drafts replies, quotes and posts on X in the user's own voice. The user reviews every draft and presses Post.",
+  "offers": ld.offers
+}|tojson }}</script>
+{% endblock %}
+{% block nav_lead %}
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#privacy">Privacy</a></li>
+{% endblock %}
+{% block main %}
+{% from "_macros.html" import star_icon, store_button, store_link, plan_heading with context %}
+{% set u = unit if unit is defined and unit else {"name": "draft", "label": "drafts"} %}
+{% set ns = namespace(free=none) %}
+{% for plan in plans if plan.amount_cents == 0 %}{% if ns.free is none %}{% set ns.free = plan %}{% endif %}{% endfor %}
+{% set free = ns.free %}
+
+{% macro primary_cta() -%}
+{% if user %}
+<a class="btn btn-big cta" href="/account">
+  {{ star_icon("cta-star") }}
+  <span class="cta-lab"><span class="cta-title">Go to your account</span><span class="cta-sub">Signed in as {{ user.email_masked }}</span></span>
+</a>
+{% else %}
+<a class="btn btn-big cta" href="/signup">
+  {{ star_icon("cta-star") }}
+  <span class="cta-lab"><span class="cta-title">Create your account</span><span class="cta-sub">{% if free %}{{ free.name }} plan · {{ free.monthly_credits|number }} {{ u.label }} a month{% else %}Chrome extension · hosted service{% endif %}</span></span>
+</a>
+{% endif %}
+{%- endmacro %}
+
+<section class="hero" id="top" aria-labelledby="hero-title" data-anim>
+  <span class="glint glint-1" aria-hidden="true">{{ star_icon("glint-star") }}</span>
+  <span class="glint glint-2" aria-hidden="true">{{ star_icon("glint-star") }}</span>
+  <span class="glint glint-3" aria-hidden="true">{{ star_icon("glint-star") }}</span>
+  <span class="glint glint-4" aria-hidden="true">{{ star_icon("glint-star") }}</span>
+  <p class="tag">A Chrome extension for X</p>
+  <div class="hero-mark" aria-hidden="true"><img src="{{ static('img/starling-wordmark.png') }}" alt="" width="1561" height="246"></div>
+  <h1 id="hero-title" data-words>Your voice. Your drafts. Your Post button.</h1>
+  <p class="hero-lead">Starling is a Chrome extension for X with a hosted AI service behind it. It learns how you write, drafts replies, quotes and posts as you, and never posts for you.</p>
+  <div class="hero-cta">
+    {{ primary_cta() }}
+    <a class="btn btn-secondary btn-big" href="#how">See how it works</a>
+  </div>
+  <p class="hero-req">{% if free %}{{ free.name }} plan, no card needed · {% endif %}Desktop Chrome 120 or later</p>
+</section>
+
+<section class="three" aria-labelledby="does-title">
+  <div class="wrap"><h2 class="label" id="does-title" data-reveal>What Starling does</h2></div>
+  {% set rows = [
+    {"title": "Reads the room", "href": "#how",
+     "desc": "Press ✦ on a post and Starling tells you whether it is worth your voice, or better left alone.",
+     "band": "It tells you when a post is worth your voice"},
+    {"title": "Writes as you", "href": "#how",
+     "desc": "Replies, quotes, new posts and rewrites in your own voice, learned from your own posts.",
+     "band": "Replies, quotes, posts and rewrites in your own voice"},
+    {"title": "Thinks with you", "href": "/docs/panel",
+     "desc": "A panel beside X for chat, and post ideas from what is new in your own niche today.",
+     "band": "Chat and fresh post ideas in a panel beside X"},
+    {"title": "Never posts", "href": "#privacy",
+     "desc": "The Post button belongs to you. Always.",
+     "band": "The Post button belongs to you. Always."},
+  ] %}
+  <ul class="fmenu" role="list" data-reveal data-anim>
+    {% for row in rows %}
+    <li class="fm-item">
+      <span class="fm-idx" aria-hidden="true">{{ "%02d"|format(loop.index) }}</span>
+      <a class="fm-link" href="{{ row.href }}">
+        <span class="fm-title">{{ row.title }}</span>
+        <span class="fm-desc">{{ row.desc }}</span>
+      </a>
+      <div class="fm-marquee" aria-hidden="true"><div class="fm-inner"><div class="fm-track">
+        {% for n in range(8) %}
+        <div class="fm-part"><span>{{ row.band }}</span>{{ star_icon("fm-star") }}</div>
+        {% endfor %}
+      </div></div></div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="how" id="how" aria-labelledby="how-title" data-anim>
+  <div class="pin">
+    <div class="wrap how-grid">
+      <div class="how-steps">
+        <h2 class="label" id="how-title">How it works</h2>
+        <ol class="hsteps" role="list">
+          <li class="hstep" data-i="1">
+            <h3><span class="hstep-idx" aria-hidden="true">01</span>Connect once.</h3>
+            <p>Add the extension to Chrome, create your account and approve the connection. Then, on your own X profile, one press lets Starling learn how you write.</p>
+          </li>
+          <li class="hstep" data-i="2">
+            <h3><span class="hstep-idx" aria-hidden="true">02</span>Browse like always.</h3>
+            <p>Starling adds a ✦ button to posts and to X's composer. Other people's posts you scroll past are not sent anywhere.</p>
+          </li>
+          <li class="hstep" data-i="3">
+            <h3><span class="hstep-idx" aria-hidden="true">03</span>Drafts appear.</h3>
+            <p>A reply, a quote, a new post or a rewrite, written in your tone and typed into X's own composer.</p>
+          </li>
+          <li class="hstep" data-i="4">
+            <h3><span class="hstep-idx" aria-hidden="true">04</span>You press Post.</h3>
+            <p>Starling fills the composer and steps back. Edit the draft, post it or throw it away. The button is yours. It always was.</p>
+          </li>
+        </ol>
+      </div>
+      {#- The product mock: X's main column beside the Starling panel, mirroring the extension's own
+          anatomy and labels (extension/entrypoints/content.ts, extension/shared/composer-flow.ts).
+          Decorative: hidden from assistive technology, nothing in it can take focus. The markup is
+          the finished state (step 4); home.js scrubs it through steps 1 to 4 while it is pinned. -#}
+      <div class="mock" id="mock" data-step="4" aria-hidden="true">
+        <div class="mock-bar"><i></i><i></i><i></i><span>x.com</span></div>
+        <div class="mx">
+          <div class="mx-main">
+            <div class="mock-post">
+              <span class="av"></span>
+              <div class="mbody">
+                <div class="mauthor"><b></b><i></i><s>· 2h</s></div>
+                <div class="mlines"><b></b><b></b><b></b></div>
+                <div class="mact">
+                  <span></span><span></span><span></span><span></span>
+                  <span class="vf">
+                    <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M21.4 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+                    {{ star_icon("vf-star") }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="mock-reply">
+              <div class="mrow">
+                <span class="av small"></span>
+                <span class="mph">Post your reply</span>
+                <span class="spill">{{ star_icon("spill-star") }}<span>Create reply</span></span>
+                <span class="xreply">Reply</span>
+              </div>
+              <div class="mcomposer-wrap">
+                <div class="mcompose-row">
+                  <span class="av small"></span>
+                  <div class="mcomposer"><span class="mtype" id="mtype">Honestly the best part: it drafts like me, and I still press Post myself.</span></div>
+                </div>
+                <div class="mcompose-foot">
+                  <span class="mtools"><i></i><i></i><i></i><i></i></span>
+                  <span class="mfootr">
+                    <svg class="xring" aria-hidden="true" focusable="false" viewBox="0 0 20 20">
+                      <circle class="bgc" cx="10" cy="10" r="9"/>
+                      <circle class="fgc" id="mring" cx="10" cy="10" r="9"/>
+                    </svg>
+                    <span class="spill done" id="mpill">{{ star_icon("spill-star") }}<span id="mpill-text">Reply ready</span><span class="dots"><i></i><i></i><i></i></span></span>
+                    <span class="xreply" id="mreply">Reply</span>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mx-side">
+            <div class="mpanel">
+              <div class="pbar">
+                <span class="pdot"></span>
+                <img src="{{ static('img/starling-wordmark-small.png') }}" alt="" width="89" height="14">
+                <span class="pico">
+                  <svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.31.06-.62.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7 7 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.34.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.04.24.25.42.5.42h3.84c.25 0 .46-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.24.1.5 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.6a3.6 3.6 0 1 1 0-7.2 3.6 3.6 0 0 1 0 7.2z"/></svg>
+                  <b>×</b>
+                </span>
+              </div>
+              <div class="pchip">
+                <span class="av"></span>
+                <div class="pchip-t">
+                  <div class="pchip-l"><b>↩</b><span>Replying to <b>@nova</b></span></div>
+                  <span class="pchip-x">“shipping the new build tonight…”</span>
+                </div>
+              </div>
+              <div class="pfeed">
+                <p class="phint">Ask Starling anything.</p>
+                <div class="pload">
+                  <div class="pload-line"><span class="pdots"><i></i><i></i><i></i></span><span id="mline">Typing the reply into X…</span></div>
+                  <div class="pload-foot"><span>Reply to @nova</span><b>Cancel</b></div>
+                </div>
+                <div class="pdone">
+                  <p class="pstatus">Typed into your reply.</p>
+                </div>
+              </div>
+              <div class="pcomposer">
+                <span class="pplus">+</span>
+                <span class="pinput">Ask Starling…</span>
+                <span class="psend"><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 19V5"/><path d="M5 12l7-7 7 7"/></svg></span>
+              </div>
+              <div class="pfoot">
+                <span id="mfoot" data-ready="238 {{ u.label }} left · resets Oct 14" data-used="237 {{ u.label }} left · resets Oct 14">237 {{ u.label }} left · resets Oct 14</span>
+                <span class="pfa"><b>hide</b></span>
+              </div>
+            </div>
+            <div class="mock-note">illustration</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="privacy" id="privacy" aria-labelledby="privacy-title">
+  <div class="wrap">
+    <div class="privacy-panel" data-reveal>
+      <h2 id="privacy-title">Nothing hidden.</h2>
+      <p class="lead">Starling is a hosted service, so drafting sends data to it. Here is what is sent, where it goes and what you control. The privacy guide has the full list.</p>
+      <div class="pfacts">
+        <div class="pfact">
+          {{ star_icon("pfact-star") }}
+          <div><h3>What is sent</h3><p>When you ask for a draft or an answer: the post you are answering, the text in the composer, attached images as small copies, your panel messages, your writing samples, and whether you used or changed the draft.</p></div>
+        </div>
+        <div class="pfact">
+          {{ star_icon("pfact-star") }}
+          <div><h3>Where it goes</h3><p>To Starling's servers and to its AI provider, which writes the draft. Payments run through Stripe, so card numbers never reach Starling. Your data is not sold, and there are no ads.</p></div>
+        </div>
+        <div class="pfact">
+          {{ star_icon("pfact-star") }}
+          <div><h3>What is never sent</h3><p>Your direct messages, your X password and other people's posts you scroll past. Your own profile and post stats are sent only if you turn that on.</p></div>
+        </div>
+        <div class="pfact">
+          {{ star_icon("pfact-star") }}
+          <div><h3>What you control</h3><p>Drafting starts only after you agree in the extension. Withdraw that consent, disconnect a browser, export your data or delete your account at any time.</p></div>
+        </div>
+      </div>
+      <ul class="pill-row" role="list">
+        <li><a class="pill" href="/privacy">Read the Privacy Policy</a></li>
+        <li><a class="pill" href="/docs/privacy-and-data">Privacy and data guide</a></li>
+        <li><a class="pill" href="/subprocessors">Subprocessors</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="plans-sec" id="plans" aria-labelledby="plans-title">
+  <div class="wrap">
+    <h2 id="plans-title" data-reveal>{{ "Start free." if free else "Pick a plan." }}</h2>
+    <p class="lead" data-reveal>A {{ u.name }} is used each time Starling returns a draft or an answer. Failed requests are not charged, and there are no overage charges.</p>
+    <ul class="plans" role="list">
+    {% for plan in plans %}
+      <li class="plan glow-card d{{ [loop.index, 8]|min }}" data-reveal>
+        <p class="plan-idx" aria-hidden="true">PLAN {{ "%02d"|format(loop.index) }}</p>
+        {{ plan_heading(plan, "h3") }}
+        <p class="plan-allowance">{{ plan.monthly_credits|number }} {{ u.label }} a month</p>
+      </li>
+    {% endfor %}
+    </ul>
+    <p class="plans-note" data-reveal>Every plan includes replies, quotes, new posts, rewrites, side panel chat, and post ideas from what is new in your own niche.</p>
+    <ul class="pill-row" role="list" data-reveal>
+      <li><a class="pill" href="/pricing">Compare plans</a></li>
+      <li><a class="pill" href="/docs/plans-and-usage">How {{ u.label }} are counted</a></li>
+    </ul>
+  </div>
+</section>
+
+<section class="faq-sec" id="questions" aria-labelledby="faq-title">
+  <div class="wrap">
+    <h2 id="faq-title" data-reveal>Common questions.</h2>
+    <div class="faq d1" data-reveal>
+      <details>
+        <summary>What is Starling?</summary>
+        <p>Starling is an AI writing assistant for X, formerly Twitter. It is a Chrome extension with a hosted service behind it: the extension lives inside X, and the drafts are written by Starling's service and its AI provider.</p>
+      </details>
+      <details>
+        <summary>Does Starling post for me?</summary>
+        <p>No. Starling puts drafts into X's composer and stops. You decide whether to edit, post or discard them. It never presses Post, likes, follows or sends messages.</p>
+      </details>
+      <details>
+        <summary>What do I need?</summary>
+        <p>Desktop Google Chrome, version 120 or later, an X account and a Starling account. The extension does not run on phones; there, use the <a href="/write">writing page</a> in your browser and copy each draft into the X app.</p>
+      </details>
+      <details>
+        <summary>Where does my writing go?</summary>
+        <p>To Starling's servers and its AI provider, and only when you ask for a draft or an answer: the extension sends the post you are answering, your text and your writing samples. Your direct messages, your X password and other people's posts you scroll past are never sent. The <a href="/privacy">Privacy Policy</a> has the details.</p>
+      </details>
+      <details>
+        <summary>What counts as a {{ u.name }}?</summary>
+        <p>A {{ u.name }} is used each time Starling gives you a draft or an answer. If a request fails, even partway through, if you cancel it before anything is shown, or if Starling holds a draft back after its own checks, nothing is used. Allowances reset every month.</p>
+      </details>
+      <details>
+        <summary>Which topics can it suggest?</summary>
+        <p>Whatever you post about. Starling learns your niche from your own posts, looks for what is new in it, in news feeds{% if site.web_search is defined and site.web_search %} and web searches{% endif %}, and cites the pages it used. Replies, quotes, rewrites and chat work on any post.</p>
+      </details>
+      <details>
+        <summary>Can I cancel?</summary>
+        <p>Yes, from your account's billing page. You keep your paid plan until the end of the period you have paid for, then your account moves to Free.</p>
+      </details>
+      <details>
+        <summary>Is Starling part of X?</summary>
+        <p>No. Starling is an independent product and is not affiliated with or endorsed by X Corp.</p>
+      </details>
+      <details>
+        <summary>Is this the bank, or the bird?</summary>
+        <p>Neither. Starling is an AI writing assistant for X. It just shares the name.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="get" id="get" aria-labelledby="get-title">
+  <div class="wrap">
+    <h2 id="get-title" data-reveal>Get Starling.</h2>
+    <p class="lead d1" data-reveal>One extension. A few minutes of setup. Then X, with your voice on tap.</p>
+    <div class="get-cta d2" data-reveal>
+      {{ primary_cta() }}
+      <p class="get-note">Desktop Chrome 120 or later{% if free %} · no card needed for the {{ free.name }} plan{% endif %}</p>
+    </div>
+    <ol class="steps" role="list">
+      <li class="step glow-card" data-reveal>
+        <p class="step-idx" aria-hidden="true">STEP 1</p>
+        <h3>Add the extension</h3>
+        <p>Add Starling to desktop Chrome. It lives right inside X, so there is nothing extra to open.</p>
+        <div class="step-action">{{ store_button(secondary=true) }}</div>
+      </li>
+      <li class="step glow-card d1" data-reveal>
+        <p class="step-idx" aria-hidden="true">STEP 2</p>
+        <h3>Create your account</h3>
+        <p>{% if site.google_sign_in is defined and site.google_sign_in %}Continue with Google, or sign up with your email and enter the code we send you.{% else %}Sign up with your email address and enter the code we send you.{% endif %}{% if free %} The {{ free.name }} plan is enough to try it.{% endif %}</p>
+      </li>
+      <li class="step glow-card d2" data-reveal>
+        <p class="step-idx" aria-hidden="true">STEP 3</p>
+        <h3>Open x.com</h3>
+        <p>In the Starling panel, choose <code>Sign in</code>, then Connect this browser. On your own profile, press Add my posts from this page in Settings, then press ✦ on a post for your first draft.</p>
+      </li>
+    </ol>
+    <div class="phone-note step" data-reveal>
+      <h3>On your phone</h3>
+      <p>Chrome extensions do not run on phones, so Starling has a writing page too. Open it in your phone's browser, paste the post you are answering or its link, and get a draft in your own voice. Copy it, or open it in the X app, and press Post yourself. Same account, same plan. On Android you can add it to your home screen and share posts to it from the X app.</p>
+      <p class="phone-note-action"><a class="btn btn-secondary" href="/write">Open the writing page</a></p>
+    </div>
+    <ul class="pill-row get-links" role="list" data-reveal>
+      <li><a class="pill" href="/docs/getting-started">Full setup guide</a></li>
+      <li><a class="pill" href="/docs/troubleshooting">Something not working?</a></li>
+      <li><a class="pill" href="/pricing">Compare plans</a></li>
+    </ul>
+  </div>
+</section>
+{% endblock %}

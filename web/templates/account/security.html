@@ -1,0 +1,162 @@
+{#- GET /account/security
+    Extra context: sessions = list of {id, current (bool), created_at, last_seen_at, user_agent_summary};
+                   errors (dict or null);
+                   sign_in = {has_password, google_available, google (null or {email_masked, connected_at}),
+                              recent (signed in within the last 10 minutes), reauth_url}.
+    POST /account/security/password  fields current_password (only when the account has a password), new_password;
+                                     general key "password"
+    POST /account/security/email     fields new_email, email_password (only with a password); general key "email"
+    POST /auth/google/link           connects Google (a round trip to Google)
+    POST /account/security/google/disconnect  field google_password; general key "google"
+    POST /account/security/sessions  signs out every other web session; general key "sessions"
+    An account without a password (made with Google) confirms a change by having signed in within the
+    last 10 minutes; after that the forms give way to "Confirm with Google" (sign_in.reauth_url). -#}
+{% extends "_account_layout.html" %}
+{% block title %}Security · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, google_mark, google_submit, input_field, local_date, local_datetime with context %}
+{% set si = sign_in if sign_in else {} %}
+{% set has_password = si.has_password is not defined or si.has_password %}
+{% set google = si.google if si.google is defined else none %}
+{% set can_confirm = si.recent is defined and si.recent %}
+{% macro confirm_with_google(action) -%}
+<div class="notice">
+  <p class="notice-title">Confirm it is you</p>
+  <p>You sign in with Google, so there is no password to check. Confirm with Google to {{ action }}. It takes a few seconds and brings you straight back here.</p>
+  <p><a class="btn-google" href="{{ si.reauth_url }}" data-busy-link>{{ google_mark() }}<span>Confirm with Google</span></a></p>
+</div>
+{%- endmacro %}
+<h1>Security</h1>
+<p class="lead">How you sign in, your email address, and where you are signed in.</p>
+
+<section class="panel" aria-labelledby="methods-title">
+  <h2 id="methods-title">Sign-in methods</h2>
+  <ul class="item-list sign-in-methods">
+    <li>
+      <div class="item-main">
+        <p class="item-title">Email and password</p>
+        <p class="muted small">{% if has_password %}On. Sign in with {{ user.email if user.email is defined else user.email_masked }} and your password.{% else %}Not set up. Add a password below if you want one.{% endif %}</p>
+      </div>
+      <span class="badge{% if has_password %} badge-on{% endif %}">{% if has_password %}On{% else %}Off{% endif %}</span>
+    </li>
+    {% if google or (si.google_available is defined and si.google_available) %}
+    <li>
+      <div class="item-main">
+        <p class="item-title">{{ google_mark() }} Google</p>
+        {% if google %}
+        <p class="muted small">Connected to {{ google.email_masked }} since {{ local_date(google.connected_at) }}.</p>
+        {% else %}
+        <p class="muted small">Sign in with one click, without a password.</p>
+        {% endif %}
+      </div>
+      <span class="badge{% if google %} badge-on{% endif %}">{% if google %}On{% else %}Off{% endif %}</span>
+    </li>
+    {% endif %}
+  </ul>
+  {% if google %}
+    {% if has_password %}
+  <details class="disclosure"{% if errors and (errors.google is defined or errors.google_password is defined) %} open{% endif %}>
+    <summary>Disconnect Google</summary>
+    <form class="form" method="post" action="/account/security/google/disconnect" novalidate>
+      {{ csrf() }}
+      {{ error_summary(errors, ["google_password"], general="google") }}
+      <p class="hint">You will sign in with your email and password from now on.</p>
+      {{ input_field("google_password", "Current password", type="password", autocomplete="current-password", errors=errors) }}
+      <div><button class="btn btn-secondary" type="submit">Disconnect Google</button></div>
+    </form>
+  </details>
+    {% else %}
+  {{ error_summary(errors, [], general="google") }}
+  <p class="hint">Google is how you sign in. To disconnect it, add a password first so you can still get in.</p>
+    {% endif %}
+  {% elif si.google_available is defined and si.google_available %}
+  <form method="post" action="/auth/google/link">
+    {{ csrf() }}
+    <div class="button-row">{{ google_submit("Connect Google") }}</div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="password-title">
+  {% if has_password %}
+  <h2 id="password-title">Change password</h2>
+  <p>Changing your password signs you out of other browsers and disconnects the Starling extension everywhere, including this browser.</p>
+  <form class="form" method="post" action="/account/security/password" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["current_password", "new_password"], general="password") }}
+    {{ input_field("current_password", "Current password", type="password", autocomplete="current-password", errors=errors) }}
+    {{ input_field("new_password", "New password", type="password", autocomplete="new-password", errors=errors, hint="At least 10 characters. A few random words work well.") }}
+    <div><button class="btn" type="submit">Change password</button></div>
+  </form>
+  <form method="post" action="/account/security/reset-link" class="inline-form">
+    {{ csrf() }}
+    <p class="hint">Forgot your current password? <button class="link-button" type="submit">Email me a reset link</button></p>
+  </form>
+  {% else %}
+  <h2 id="password-title">Add a password</h2>
+  <p>Optional. With a password you can also sign in with your email address, for example on a computer where you do not use Google.</p>
+  {% if can_confirm %}
+  <form class="form" method="post" action="/account/security/password" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["new_password"], general="password") }}
+    {#- For password managers: the address the new password belongs to. It has no name, so it is not sent. #}
+    {% if si.email is defined and si.email %}
+    <div class="visually-hidden" aria-hidden="true">
+      <label for="field-username">Email address</label>
+      <input id="field-username" type="email" value="{{ si.email }}" autocomplete="username" tabindex="-1" readonly>
+    </div>
+    {% endif %}
+    {{ input_field("new_password", "New password", type="password", autocomplete="new-password", errors=errors, hint="10 to 128 characters. Use a long one you do not use anywhere else.") }}
+    <div><button class="btn" type="submit">Add password</button></div>
+  </form>
+  {% else %}
+  {{ error_summary(errors, ["new_password"], general="password") }}
+  {{ confirm_with_google("add a password") }}
+  {% endif %}
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="email-title">
+  <h2 id="email-title">Change email address</h2>
+  <p>Your current address is {{ user.email if user.email is defined else user.email_masked }}. We send a confirmation link to the new address, and the change applies once you open it.{% if google %} You can keep signing in with Google either way.{% endif %}</p>
+  {% if has_password or can_confirm %}
+  <form class="form" method="post" action="/account/security/email" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["new_email", "email_password"], general="email") }}
+    {{ input_field("new_email", "New email address", type="email", autocomplete="email", errors=errors, spellcheck=false, inputmode="email") }}
+    {% if has_password %}
+    {{ input_field("email_password", "Current password", type="password", autocomplete="current-password", errors=errors) }}
+    {% endif %}
+    <div><button class="btn" type="submit">Send confirmation link</button></div>
+  </form>
+  {% else %}
+  {{ error_summary(errors, ["new_email"], general="email") }}
+  {{ confirm_with_google("change your email address") }}
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="sessions-title">
+  <h2 id="sessions-title">Where you are signed in</h2>
+  <p>Website sign-ins for this account. Connected extensions are listed under <a href="/account/devices">Devices</a>.</p>
+  <ul class="item-list">
+  {% for s in sessions %}
+    <li>
+      <div class="item-main">
+        <p class="item-title">{{ s.user_agent_summary }}{% if s.current %} <span class="badge">This browser</span>{% endif %}</p>
+        <p class="muted small">Signed in {{ local_date(s.created_at) }} · Last active {{ local_datetime(s.last_seen_at) }}</p>
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+  {% if sessions|length > 1 %}
+  <form method="post" action="/account/security/sessions">
+    {{ csrf() }}
+    {{ error_summary(errors, [], general="sessions") }}
+    <p class="hint">This does not disconnect the extension. Use <a href="/account/devices">Devices</a> for that.</p>
+    <div class="button-row"><button class="btn btn-secondary" type="submit">Sign out of other browsers</button></div>
+  </form>
+  {% else %}
+  <p class="hint">This is the only browser signed in.</p>
+  {% endif %}
+</section>
+{% endblock %}

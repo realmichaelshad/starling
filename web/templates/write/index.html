@@ -1,0 +1,143 @@
+{#- GET /write  The writing page: Starling on a phone (web/write.py). Extra context:
+    state (CONTRACTS 6.2, the same numbers as the account page and the extension),
+    consent {given, granted_at, version}, disclosure (web/write.py DISCLOSURE),
+    prefill {text, link, shared} (a share from another app: title, text and url joined),
+    next_path (where Agree returns to).
+
+    Drafting runs in static/js/write.js: POST /write/link turns a link to a post on X into its words,
+    POST /write/draft asks for one draft (JSON, X-CSRF-Token, Idempotency-Key), GET
+    /write/requests/{key} finds a draft whose answer the phone missed. The result area and the draft
+    card below are filled by that script; without JavaScript the page says what it needs. -#}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, error_summary, app_tabbar, local_date, store_link with context %}
+{% block title %}Write · Starling{% endblock %}
+{% block description %}Write a reply, a quote or a post for X in your own voice, on your phone or any browser. You post it yourself.{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}app-page has-tabbar{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static('css/write.css') }}">
+<script src="{{ static('js/write.js') }}" defer></script>
+{% endblock %}
+{% block main %}
+{% set a = state.account %}
+{% set u = state.usage %}
+{% set paused = state.service.status == "paused" %}
+<div class="app-wrap">
+  <div class="app-head">
+    <h1>Write</h1>
+    <p class="usage-line" data-usage-line><strong data-usage-remaining>{{ u.remaining|number }}</strong> of {{ u.allowance|number }} {{ u.unit_label }} left · resets {{ local_date(u.resets_at) }}</p>
+  </div>
+
+  {% if a.status != "active" %}
+  <div class="notice notice-error">
+    <p class="notice-title">Your account is suspended</p>
+    <p>Drafting is off while the suspension lasts. <a href="/contact">Contact support</a> if you think this is a mistake.</p>
+  </div>
+  {% elif not a.email_verified %}
+  <div class="notice notice-warning">
+    <p class="notice-title">Confirm your email first</p>
+    <p>We sent a 6-digit code and a link to {{ user.email if user and user.email is defined else a.email_masked }}. Starling can write as soon as you confirm.</p>
+    <p><a class="btn" href="/verify-email/sent">Enter the code</a></p>
+  </div>
+  {% elif not consent.given %}
+  {% include "write/_disclosure.html" %}
+  {% else %}
+
+  {% if paused %}
+  <div class="notice notice-warning" data-service-notice>
+    <p class="notice-title">Drafting is paused right now</p>
+    <p>{{ state.service.message if state.service.message else "Please try again later." }} Nothing is used while it is paused.</p>
+  </div>
+  {% elif u.remaining <= 0 %}
+  <div class="notice notice-warning" data-usage-notice="limit">
+    <p class="notice-title">You have used all your {{ u.unit_label }} for this month</p>
+    <p>They come back on {{ local_date(u.resets_at) }}. There are no overage charges. <a href="/pricing">Compare plans</a></p>
+  </div>
+  {% endif %}
+
+  <p class="notice notice-warning no-js-note">Writing here needs JavaScript. Turn it on in your browser's settings, then reload this page.</p>
+
+  <div class="needs-js" data-write data-prefill-link="{{ prefill.link or '' }}" data-shared="{{ 'yes' if prefill.shared else 'no' }}">
+    <form class="write-form" method="post" action="/write/draft" data-write-form data-handled-by-script novalidate>
+      {{ csrf() }}
+      {{ error_summary(none) }}
+      <fieldset>
+        <legend class="label">What are you writing?</legend>
+        <div class="segmented">
+          <input type="radio" name="kind" id="kind-reply" value="reply" checked>
+          <label for="kind-reply">Reply</label>
+          <input type="radio" name="kind" id="kind-quote" value="quote">
+          <label for="kind-quote">Quote</label>
+          <input type="radio" name="kind" id="kind-post" value="post">
+          <label for="kind-post">New post</label>
+        </div>
+      </fieldset>
+
+      <div class="field">
+        <div class="field-head">
+          <label for="field-text" data-text-label>Paste the post you're replying to</label>
+          <button class="paste-button" type="button" data-paste hidden><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><rect x="7" y="4" width="10" height="4" rx="1"/><path d="M7 6H5v15h14V6h-2"/></svg><span>Paste</span></button>
+        </div>
+        <p class="hint" id="field-text-hint" data-text-hint>Its words, or its link from X.</p>
+        <textarea id="field-text" name="text" rows="6" autocomplete="off" maxlength="10000" aria-describedby="field-text-hint" data-text>{{ prefill.text }}</textarea>
+        <p class="link-note" data-link-note aria-live="polite" hidden></p>
+      </div>
+
+      <div class="field" data-author-row>
+        <label for="field-author">Who wrote it? <span class="optional">(optional)</span></label>
+        <input id="field-author" name="author" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="100" placeholder="@handle" data-author>
+      </div>
+
+      <button class="btn btn-big write-submit" type="submit" data-write-submit>Write it</button>
+      <p class="small muted write-fineprint">Each draft uses {{ "one" if u.per_request is not defined or u.per_request == 1 else u.per_request|number }} of your {{ u.unit_label }}. Starling never posts for you.</p>
+    </form>
+
+    <section class="write-result" aria-labelledby="result-title" data-result hidden>
+      <h2 class="visually-hidden" id="result-title">Your draft</h2>
+      <p class="write-status" role="status" data-status></p>
+      <div class="skeleton" data-skeleton aria-hidden="true" hidden><span></span><span></span><span></span><span></span></div>
+      <div class="draft-list" data-drafts></div>
+      <div class="notice notice-error" role="alert" data-error hidden>
+        <p class="result-message" data-error-text></p>
+        <div class="button-row" data-error-actions hidden></div>
+      </div>
+      <div class="notice" data-message hidden>
+        <p class="result-message" data-message-text></p>
+        <ul class="draft-notes" data-message-reasons hidden></ul>
+        <div class="button-row" data-message-actions hidden>
+          <button class="btn btn-secondary" type="button" data-anyway hidden>Write one anyway</button>
+        </div>
+      </div>
+      <div class="result-actions" data-result-actions hidden>
+        <button class="btn btn-secondary" type="button" data-again>Try another</button>
+        <a class="btn btn-secondary" href="https://x.com/" target="_blank" rel="noopener">Open X</a>
+      </div>
+    </section>
+
+    <template data-draft-template>
+      <article class="draft-card">
+        <p class="draft-label" data-draft-label hidden></p>
+        <p class="draft-text" data-draft-text></p>
+        <div class="draft-actions">
+          <button class="btn" type="button" data-copy-draft>Copy</button>
+          {#- A button, not a link to X's posting page: ad blockers' social-share filters hide such links. -#}
+          <button class="btn btn-secondary" type="button" data-handoff hidden>Open in X</button>
+          <p class="copy-status" aria-live="polite" data-copy-status></p>
+        </div>
+      </article>
+    </template>
+  </div>
+
+  <p class="small muted voice-tip">Drafts sound like you once Starling has a few of your own posts. <a href="/write/voice">Teach Starling your voice</a></p>
+  <div class="small muted consent-line">
+    <form method="post" action="/write/consent/withdraw">
+      {{ csrf() }}
+      You agreed to what Starling sends from this page{% if consent.granted_at %} on {{ local_date(consent.granted_at) }}{% endif %}.
+      <button class="link-button" type="submit">Take it back</button>
+    </form>
+    <p>On a computer, the {{ store_link("Chrome extension") }} writes right inside X.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block tabbar %}{{ app_tabbar("write") }}{% endblock %}

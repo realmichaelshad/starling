@@ -1,0 +1,53 @@
+{#- GET /admin/failures
+    Extra context: admin, window_label;
+      totals {requests, failed, rate_pct} and summary [{code, count, rate_pct}] for the drafting routes
+      (/api/v1/assist and /api/v1/assist/stream; requests = reservations + refusals before a reservation);
+      failures [{at, account_id ("" when the caller was not identified), route, mode, code, http_status, count}]
+      for every recorded extension API route, newest first, at most 200 rows (identical errors within a minute share a row). -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Failures · Owner dashboard · Starling{% endblock %}
+{% block content %}
+<h1>Failures</h1>
+<p class="muted">Requests that ended in an error, {{ window_label }}. Error codes only; request content is never stored here.</p>
+<h2 id="by-code">Drafting requests by code</h2>
+<p><span class="{{ 'health-bad' if totals.rate_pct >= 5 else 'health-warn' if totals.rate_pct >= 1 else 'health-ok' }}">{{ totals.rate_pct|percent }}</span> of {{ totals.requests|number }} drafting requests failed ({{ totals.failed|number }}).</p>
+{% if summary %}
+<div class="table-wrap" role="region" aria-label="Failures by code" tabindex="0">
+  <table>
+    <thead><tr><th scope="col">Code</th><th scope="col" class="num">Count</th><th scope="col" class="num">Share of requests</th></tr></thead>
+    <tbody>
+    {% for row in summary %}<tr><td class="mono">{{ row.code }}</td><td class="num">{{ row.count|number }}</td><td class="num">{{ row.rate_pct|percent }}</td></tr>{% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="notice notice-success">No drafting request failed in this window.</p>
+{% endif %}
+<h2 id="recent">Recent failures</h2>
+<p class="small muted">Every extension API route. Identical errors within one minute share a row.</p>
+{% if failures %}
+<div class="table-wrap" role="region" aria-label="Recent failures" tabindex="0">
+  <table>
+    <thead><tr><th scope="col" class="when">When</th><th scope="col">Customer</th><th scope="col">Route</th><th scope="col">Mode</th><th scope="col">Code</th><th scope="col" class="num">HTTP</th><th scope="col" class="num">Count</th></tr></thead>
+    <tbody>
+    {% for f in failures %}
+      <tr>
+        <td class="when">{{ f.at|datetime }}</td>
+        <td>{% if f.account_id %}<a class="mono" href="/admin/customers/{{ f.account_id }}">{{ f.account_id|short_id }}</a>{% else %}<span class="muted">Not identified</span>{% endif %}</td>
+        <td class="mono">{{ f.route }}</td>
+        <td>{{ f.mode }}</td>
+        <td class="mono">{{ f.code }}</td>
+        <td class="num">{{ f.http_status }}</td>
+        <td class="num">{{ f.count|number }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty-title">Nothing to show</p>
+  <p>No extension API route returned an error in this window.</p>
+</div>
+{% endif %}
+{% endblock %}

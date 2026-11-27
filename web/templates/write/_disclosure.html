@@ -1,0 +1,25 @@
+{#- The writing page's one-time disclosure (web/write.py DISCLOSURE, pinned by its hash), shown
+    before anything is sent. Included by write/index.html and write/voice.html with their context:
+    disclosure {title, intro, sections [{heading, items}], agree, decline}, next_path (where Agree
+    returns to, a /write path, the shared text included). Agreeing posts to /write/consent, which
+    records consent kind web_disclosure in the same table as the extension's. -#}
+{% from "_macros.html" import csrf with context %}
+<section class="panel disclosure" aria-labelledby="disclosure-title" data-disclosure>
+  <h2 id="disclosure-title">{{ disclosure.title }}</h2>
+  <p>{{ disclosure.intro }}</p>
+  {% for section in disclosure.sections %}
+  <h3>{{ section.heading }}</h3>
+  <ul>
+    {% for item in section["items"] %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+  {% endfor %}
+  <form class="button-row" method="post" action="/write/consent">
+    {{ csrf() }}
+    <input type="hidden" name="next" value="{{ next_path }}">
+    <button class="btn btn-big" type="submit" name="agree" value="yes">{{ disclosure.agree }}</button>
+    <a class="btn btn-secondary btn-big" href="/account">{{ disclosure.decline }}</a>
+  </form>
+  <p class="small muted">You can take it back at any time on the writing page. The <a href="/privacy">Privacy Policy</a> has the details.</p>
+</section>

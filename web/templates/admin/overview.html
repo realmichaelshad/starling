@@ -1,0 +1,123 @@
+{#- GET /admin
+    Extra context: admin (see _admin_layout.html) and metrics (backend admin/metrics.py overview):
+      generated_at; service {status ("ok" or "paused"), message or null, owner_paused, free_paused};
+      alerts [{level, text, created_at, key}] (fired within the last 7 days, newest first);
+      paid_accounts, free_accounts, mrr_cents, currency;
+      subscribers [{plan_code, plan_name, active, past_due, suspended, canceling}];
+      credits {today, last_7d, last_30d};
+      ai {calls_today, cost_today_micros, daily_budget_micros, cost_month_micros, monthly_budget_micros, calls_30d, released_with_spend_30d};
+      failures {window_label, requests, failed, rate_pct, top_codes [{code, count}]};
+      webhooks {received_24h, pending, failed, oldest_pending_at or null, last_processed_at or null};
+      backup {at, ok, archive or null, size_bytes or null, verified, error or null} or null;
+      disk {path, total_bytes, free_bytes, free_pct} or null (the volume holding the data directory) -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Owner dashboard · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import budget_meter with context %}
+{% set m = metrics %}
+<h1>Owner dashboard</h1>
+<p class="muted">Figures as of {{ m.generated_at|datetime }}. Estimates only; Stripe and the AI provider's invoices are the final record.</p>
+
+{% if m.service.status == "paused" %}
+<div class="notice notice-error"><p class="notice-title">Drafting is paused for all customers</p><p>{{ m.service.message if m.service.message else "No reason recorded." }}</p><p><a href="/admin/ai">Pause and resume drafting</a></p></div>
+{% elif m.service.free_paused %}
+<div class="notice notice-warning"><p class="notice-title">Drafting is paused for free accounts</p><p>Today's AI spend reached the free-plan share of the daily budget. Paid accounts keep drafting; free accounts resume at 00:00 UTC.</p></div>
+{% endif %}
+{% if m.alerts %}
+<ul class="flash-list">
+{% for alert in m.alerts %}
+  <li class="notice notice-{{ 'error' if alert.level == 'error' else 'warning' }}">{{ alert.text }} <span class="muted small">({{ alert.created_at|datetime }})</span></li>
+{% endfor %}
+</ul>
+{% endif %}
+
+<section aria-labelledby="subscribers-title">
+  <h2 id="subscribers-title">Subscribers</h2>
+  <dl class="kpis">
+    <div class="stat"><dt>Paid accounts</dt><dd>{{ m.paid_accounts|number }}</dd></div>
+    <div class="stat"><dt>Free accounts</dt><dd>{{ m.free_accounts|number }}</dd></div>
+    <div class="stat"><dt>Estimated monthly recurring revenue</dt><dd>{{ m.mrr_cents|money(m.currency) }}</dd></div>
+  </dl>
+  <div class="table-wrap" role="region" aria-label="Subscribers by plan and status" tabindex="0">
+    <table>
+      <thead><tr><th scope="col">Plan</th><th scope="col" class="num">Active</th><th scope="col" class="num">Past due</th><th scope="col" class="num">Suspended</th><th scope="col" class="num">Cancelling</th></tr></thead>
+      <tbody>
+      {% for row in m.subscribers %}
+        <tr><th scope="row">{{ row.plan_name }}</th><td class="num">{{ row.active|number }}</td><td class="num">{{ row.past_due|number }}</td><td class="num">{{ row.suspended|number }}</td><td class="num">{{ row.canceling|number }}</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section aria-labelledby="credits-title">
+  <h2 id="credits-title">Credits used</h2>
+  <dl class="kpis">
+    <div class="stat"><dt>Today (UTC)</dt><dd>{{ m.credits.today|number }}</dd></div>
+    <div class="stat"><dt>Last 7 days</dt><dd>{{ m.credits.last_7d|number }}</dd></div>
+    <div class="stat"><dt>Last 30 days</dt><dd>{{ m.credits.last_30d|number }}</dd></div>
+  </dl>
+</section>
+
+<section aria-labelledby="ai-title">
+  <h2 id="ai-title">AI calls and estimated cost</h2>
+  <dl class="kpis">
+    <div class="stat"><dt>Calls today</dt><dd>{{ m.ai.calls_today|number }}</dd></div>
+    <div class="stat"><dt>Calls, last 30 days</dt><dd>{{ m.ai.calls_30d|number }}</dd></div>
+    <div class="stat"><dt>Released requests with AI spend, 30 days</dt><dd>{{ m.ai.released_with_spend_30d|number }}</dd></div>
+  </dl>
+  <div class="meter">
+    <p class="meter-label" id="budget-day"><span>Today against the daily budget</span><span>{{ m.ai.cost_today_micros|usd_micros }} of {{ m.ai.daily_budget_micros|usd_micros }}</span></p>
+    {{ budget_meter("budget-day", m.ai.cost_today_micros, m.ai.daily_budget_micros) }}
+  </div>
+  <div class="meter">
+    <p class="meter-label" id="budget-month"><span>This month against the monthly budget</span><span>{{ m.ai.cost_month_micros|usd_micros }} of {{ m.ai.monthly_budget_micros|usd_micros }}</span></p>
+    {{ budget_meter("budget-month", m.ai.cost_month_micros, m.ai.monthly_budget_micros) }}
+  </div>
+  <ul class="pill-row"><li><a class="pill" href="/admin/ai">AI provider status</a></li></ul>
+</section>
+
+<section aria-labelledby="failures-title">
+  <h2 id="failures-title">Failures, {{ m.failures.window_label }}</h2>
+  <p><span class="{{ 'health-bad' if m.failures.rate_pct >= 5 else 'health-warn' if m.failures.rate_pct >= 1 else 'health-ok' }}">{{ m.failures.rate_pct|percent }}</span> of {{ m.failures.requests|number }} drafting requests failed ({{ m.failures.failed|number }}).</p>
+  {% if m.failures.top_codes %}
+  <div class="table-wrap" role="region" aria-label="Most common failure codes" tabindex="0">
+    <table>
+      <thead><tr><th scope="col">Code</th><th scope="col" class="num">Count</th></tr></thead>
+      <tbody>
+      {% for row in m.failures.top_codes %}<tr><td class="mono">{{ row.code }}</td><td class="num">{{ row.count|number }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  <ul class="pill-row"><li><a class="pill" href="/admin/failures">All recent failures</a></li></ul>
+</section>
+
+<section aria-labelledby="webhooks-title">
+  <h2 id="webhooks-title">Stripe webhooks</h2>
+  {% set healthy = m.webhooks.failed == 0 and m.webhooks.oldest_pending_at is none %}
+  <p><span class="{{ 'health-ok' if healthy else 'health-bad' }}">{{ "Healthy" if healthy else "Needs attention" }}</span>: {{ m.webhooks.received_24h|number }} received in 24 hours, {{ m.webhooks.pending|number }} waiting, {{ m.webhooks.failed|number }} failed.{% if m.webhooks.oldest_pending_at %} Oldest waiting since {{ m.webhooks.oldest_pending_at|datetime }}.{% endif %}{% if m.webhooks.last_processed_at %} Last processed {{ m.webhooks.last_processed_at|datetime }}.{% endif %}</p>
+  <ul class="pill-row"><li><a class="pill" href="/admin/webhooks">Webhook events</a></li></ul>
+</section>
+
+<section aria-labelledby="backup-title">
+  <h2 id="backup-title">Backups</h2>
+  {% if m.backup %}
+  <p><span class="{{ 'health-ok' if m.backup.ok else 'health-bad' }}">{{ "Last backup succeeded" if m.backup.ok else "Last backup failed" }}</span> on {{ m.backup.at|datetime }}.{% if m.backup.ok %} {{ "Verified" if m.backup.verified else "Not verified" }}{% if m.backup.size_bytes is not none %}, {{ (m.backup.size_bytes / 1048576)|number }} MB{% endif %}.{% endif %}</p>
+  {% if m.backup.archive %}<p class="small muted">Archive <span class="mono">{{ m.backup.archive }}</span></p>{% endif %}
+  {% if m.backup.error %}<p class="small">{{ m.backup.error }}</p>{% endif %}
+  {% else %}
+  <p class="muted">No scheduled backup has been recorded yet.</p>
+  {% endif %}
+</section>
+
+<section aria-labelledby="disk-title">
+  <h2 id="disk-title">Disk space</h2>
+  {% if m.disk %}
+  <p><span class="{{ 'health-bad' if m.disk.free_pct < 5 else 'health-warn' if m.disk.free_pct < 15 else 'health-ok' }}">{{ m.disk.free_pct|percent }} free</span> on the data volume: {{ (m.disk.free_bytes / 1073741824)|round(1)|number }} GB of {{ (m.disk.total_bytes / 1073741824)|round(1)|number }} GB.</p>
+  <p class="small muted">Engines, backups and the control database all write to <span class="mono">{{ m.disk.path }}</span>.</p>
+  {% else %}
+  <p class="muted">Free space could not be read for the data volume.</p>
+  {% endif %}
+</section>
+{% endblock %}

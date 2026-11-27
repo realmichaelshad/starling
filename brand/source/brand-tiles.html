@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Starling brand tiles</title>
+<style>
+  @font-face { font-family: "Chakra Petch"; font-weight: 500; src: url("../../web/static/fonts/chakra-petch-500.woff2") format("woff2"); }
+  @font-face { font-family: "Chakra Petch"; font-weight: 600; src: url("../../web/static/fonts/chakra-petch-600.woff2") format("woff2"); }
+  html, body { margin: 0; background: #000; }
+  .tile { position: relative; overflow: hidden; background: radial-gradient(120% 80% at 50% 0%, #0a0a09, #000 58%); }
+  .grain { position: absolute; inset: 0; background: url("../../web/static/img/grain.png"); opacity: .05; }
+  .glint { position: absolute; fill: #9a9d9f; }
+
+  #banner { width: 1500px; height: 500px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #banner .mark { width: 700px; display: block; }
+  #banner .tag { font: 500 27px/1.2 "Chakra Petch", sans-serif; color: #dad7cf; margin: 34px 0 0; }
+  #banner .label { font: 600 15px/1 "Chakra Petch", sans-serif; letter-spacing: .42em; text-transform: uppercase; color: #9a9d9f; margin: 0 0 34px; padding-left: .42em; }
+
+  #profile { width: 400px; height: 400px; display: flex; align-items: center; justify-content: center; }
+  #profile svg.star { width: 250px; height: 250px; fill: #faf8f3; }
+
+  #promo { width: 440px; height: 280px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #promo .mark { width: 300px; display: block; }
+  #promo .tag { font: 500 15px/1.2 "Chakra Petch", sans-serif; color: #dad7cf; margin: 18px 0 0; }
+</style>
+</head>
+<body>
+<div id="banner" class="tile">
+  <div class="grain"></div>
+  <svg class="glint" style="left:150px;top:96px;width:13px;height:13px;opacity:.5" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint" style="right:190px;top:130px;width:10px;height:10px;opacity:.4" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint" style="left:260px;bottom:100px;width:9px;height:9px;opacity:.35" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint" style="right:300px;bottom:84px;width:13px;height:13px;opacity:.5" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <p class="label">A Chrome extension for X</p>
+  <img class="mark" src="../web/starling-wordmark.png" alt="Starling">
+  <p class="tag">Your voice. Your drafts. Your Post button.</p>
+</div>
+<div id="profile" class="tile">
+  <div class="grain"></div>
+  <svg class="star" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+</div>
+<div id="promo" class="tile">
+  <div class="grain"></div>
+  <img class="mark" src="../web/starling-wordmark.png" alt="Starling">
+  <p class="tag">Your voice. Your drafts. Your Post button.</p>
+</div>
+</body>
+</html>

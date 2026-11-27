@@ -1,0 +1,34 @@
+# Runtime dependencies of the Starling container image: gateway, services process and customer engines.
+#
+# This is the human-edited input. The image installs only backend/requirements.lock (exact versions
+# with hashes for linux/amd64, CPython 3.11), generated from this file by scripts/lock-requirements.sh
+# or scripts/lock-requirements.ps1. Lower bounds are the versions the test suites run against; upper
+# bounds keep untested major releases (minor releases for 0.x packages) out of a regenerated lock.
+# Development and CI tools live in requirements-dev.txt.
+
+# Web framework: gateway, services process and the engine API
+fastapi>=0.141.1,<0.142
+starlette>=1.4.1,<2  # imported directly by the gateway; fastapi also constrains it
+uvicorn[standard]>=0.52.1,<0.53
+pydantic>=2.13.4,<3
+
+# HTTP client
+httpx>=0.28.1,<0.29  # gateway, services and engines: payments, AI provider, services socket
+
+# Anthropic's official SDK: the services process's AI provider when AI_PROVIDER=anthropic
+# (services/anthropic_upstream.py). It brings its own HTTP library, httpx2.
+anthropic>=2.3.0,<3
+
+# Website, accounts and backups (gateway, CLI)
+jinja2>=3.1.6,<4
+python-multipart>=0.0.32,<0.1
+argon2-cffi>=25.1.0,<26
+cryptography>=50.0.1,<51  # also encrypts backup archives (AES-256-GCM, scrypt)
+
+# Engine intelligence
+numpy>=2.4.6,<3
+scikit-learn>=1.9.0,<1.10  # minor releases can change how fitted models behave; brings scipy with it
+pillow>=12.3.0,<13
+
+# Time zone data that does not depend on the operating system image
+tzdata>=2026.3

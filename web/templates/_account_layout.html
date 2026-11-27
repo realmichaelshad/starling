@@ -1,0 +1,23 @@
+{#- Signed-in account pages. -#}
+{% extends "base.html" %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}has-tabbar{% endblock %}
+{% block tabbar %}{% from "_macros.html" import app_tabbar with context %}{{ app_tabbar("account") }}{% endblock %}
+{% block main %}
+{% from "_macros.html" import nav_link with context %}
+<div class="wrap layout-sidebar">
+  <nav class="sidenav" aria-label="Account">
+    <p class="sidenav-title">Account</p>
+    <ul>
+      <li>{{ nav_link("/account", "Overview", request_path == "/account") }}</li>
+      <li>{{ nav_link("/account/billing", "Billing", request_path == "/account/billing") }}</li>
+      <li>{{ nav_link("/account/devices", "Devices", request_path == "/account/devices") }}</li>
+      <li>{{ nav_link("/account/data", "Your data", request_path == "/account/data") }}</li>
+      <li>{{ nav_link("/account/security", "Security", request_path == "/account/security") }}</li>
+    </ul>
+  </nav>
+  <div class="content">
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

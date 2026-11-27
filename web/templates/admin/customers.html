@@ -1,0 +1,48 @@
+{#- GET /admin/customers?q=&page=
+    Extra context: admin, query (string), page {number, has_prev, has_next},
+    customers [{id, email, plan_name, plan_status, account_status, used, allowance, created_at, last_active_at or null}].
+    The search form is GET, so it deliberately carries no CSRF token. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Customers · Owner dashboard · Starling{% endblock %}
+{% block content %}
+<h1>Customers</h1>
+<form class="filter-form" method="get" action="/admin/customers" role="search">
+  <div class="field">
+    <label for="field-q">Search by email or account ID</label>
+    <input id="field-q" name="q" type="search" autocomplete="off" spellcheck="false" value="{{ query }}">
+  </div>
+  <button class="btn btn-secondary" type="submit">Search</button>
+</form>
+{% if customers %}
+<div class="table-wrap" role="region" aria-label="Customers" tabindex="0">
+  <table>
+    <thead>
+      <tr><th scope="col">Email</th><th scope="col">Plan</th><th scope="col">Status</th><th scope="col" class="num">Used</th><th scope="col" class="when">Created (UTC)</th><th scope="col" class="when">Last active (UTC)</th></tr>
+    </thead>
+    <tbody>
+    {% for c in customers %}
+      <tr>
+        <th scope="row"><a href="/admin/customers/{{ c.id }}">{{ c.email }}</a></th>
+        <td>{{ c.plan_name }} <span class="muted">({{ c.plan_status }})</span></td>
+        <td>{{ c.account_status }}</td>
+        <td class="num">{{ c.used|number }} / {{ c.allowance|number }}</td>
+        <td class="when">{{ c.created_at|date }}</td>
+        <td class="when">{{ c.last_active_at|date if c.last_active_at else "Never" }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty-title">No customers match{% if query %} "{{ query }}"{% endif %}</p>
+  <p>Search by a whole email address or an account ID. Clear the box to list every customer.</p>
+</div>
+{% endif %}
+{% if page.has_prev or page.has_next %}
+<nav class="pager" aria-label="Customer pages">
+  {% if page.has_prev %}<a href="/admin/customers?q={{ query|urlencode }}&amp;page={{ page.number - 1 }}">Previous page</a>{% else %}<span></span>{% endif %}
+  {% if page.has_next %}<a href="/admin/customers?q={{ query|urlencode }}&amp;page={{ page.number + 1 }}">Next page</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

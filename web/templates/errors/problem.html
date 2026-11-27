@@ -1,0 +1,25 @@
+{#- Every website refusal that is not a 404 or a 500: an expired form, too many attempts, a form that
+    was too large, an unconfirmed address, the site being briefly unavailable (security/errors.py
+    page_error_response). One card, one sentence of why, one way forward.
+    Extra context: status (int), title, message, action (null or {label, href}),
+    secondary (null or {label, href}). -#}
+{% extends "base.html" %}
+{% block title %}{{ title }} · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">{% if status == 429 %}Slow down{% elif status == 503 %}Temporarily unavailable{% elif status == 403 %}One more step{% else %}Something is not right{% endif %}</p>
+    <h1>{{ title }}</h1>
+    <p class="lead">{{ message }}</p>
+  </header>
+  {% if action or secondary %}
+  <div class="button-row">
+    {% if action %}<a class="btn" href="{{ action.href }}">{{ action.label }}</a>{% endif %}
+    {% if secondary %}<a class="btn btn-secondary" href="{{ secondary.href }}">{{ secondary.label }}</a>{% endif %}
+  </div>
+  {% endif %}
+  <p class="muted small">Still stuck? <a href="/contact">Contact support</a>.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{#- Owner dashboard pages. Apart from /admin/totp and /admin/elevate (auth/routes.py), every admin
+    page sits behind auth.deps.require_admin: owner account, authenticator enrolled and elevated
+    within the last 15 minutes. Optional extra context on admin pages: admin {"elevated_until": unix
+    seconds}. Admin pages show metadata, usage, cost and error codes only; never prompts, drafts or
+    writing samples. -#}
+{% extends "base.html" %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block referrer %}same-origin{% endblock %}
+{% block main %}
+{% from "_macros.html" import nav_link with context %}
+<div class="wrap layout-sidebar">
+  <nav class="sidenav" aria-label="Owner dashboard">
+    <p class="sidenav-title">Owner dashboard</p>
+    <ul>
+      <li>{{ nav_link("/admin", "Overview", request_path == "/admin") }}</li>
+      <li>{{ nav_link("/admin/customers", "Customers", request_path.startswith("/admin/customers")) }}</li>
+      <li>{{ nav_link("/admin/failures", "Failures", request_path == "/admin/failures") }}</li>
+      <li>{{ nav_link("/admin/webhooks", "Webhooks", request_path == "/admin/webhooks") }}</li>
+      <li>{{ nav_link("/admin/audit", "Audit log", request_path == "/admin/audit") }}</li>
+      <li>{{ nav_link("/admin/ai", "AI provider", request_path == "/admin/ai") }}</li>
+    </ul>
+  </nav>
+  <div class="content">
+    {% block elevation %}
+    {% if admin is defined and admin and admin.elevated_until %}
+    <p class="notice notice-success">Owner access confirmed until {{ admin.elevated_until|datetime }}. Every change is written to the audit log.</p>
+    {% endif %}
+    {% endblock %}
+    {% block content %}{% endblock %}
+  </div>
+</div>
+{% endblock %}

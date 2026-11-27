@@ -1,0 +1,31 @@
+{#- GET/POST /admin/totp (auth/routes.py): authenticator enrollment for an owner account.
+    Extra context: secret (base32), otpauth_uri, errors (dict; fields password, code; general "form").
+    POST fields: csrf_token, password, code. Once enrolled the gateway redirects to /admin/elevate. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Set up two-step verification · Owner dashboard · Starling{% endblock %}
+{% block elevation %}{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, input_field with context %}
+<h1>Set up two-step verification</h1>
+<p class="lead">Owner access needs an authenticator app. You set it up once; after that you enter a fresh code to open the dashboard.</p>
+<ol>
+  <li>In your authenticator app, add an account using a setup key.</li>
+  <li>
+    <p>Enter this key:</p>
+    <div class="copy-row">
+      <span class="mono" id="totp-secret">{{ secret|batch(4)|map("join")|join(" ") }}</span>
+      <button class="btn btn-secondary" type="button" data-copy-target="totp-secret" data-copy-status="totp-copy-status" hidden>Copy key</button>
+    </div>
+    <p class="copy-status" id="totp-copy-status" role="status" aria-live="polite"></p>
+  </li>
+  <li>If your app accepts a setup link instead, use: <span class="mono">{{ otpauth_uri }}</span></li>
+  <li>Enter your account password and the 6-digit code the app shows.</li>
+</ol>
+<form class="form" method="post" action="/admin/totp" novalidate>
+  {{ csrf() }}
+  {{ error_summary(errors, ["password", "code"]) }}
+  {{ input_field("password", "Account password", type="password", autocomplete="current-password", errors=errors) }}
+  {{ input_field("code", "6-digit code", autocomplete="one-time-code", errors=errors, inputmode="numeric", maxlength="6", spellcheck=false) }}
+  <div><button class="btn" type="submit">Turn on two-step verification</button></div>
+</form>
+{% endblock %}

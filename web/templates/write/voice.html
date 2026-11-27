@@ -1,0 +1,90 @@
+{#- GET /write/voice  "Teach Starling your voice": the writing samples (web/write.py). Extra context:
+    state (CONTRACTS 6.2), consent {given, granted_at, version}, disclosure (web/write.py DISCLOSURE),
+    samples (None until the page may ask the engine, else a list of {id, text, added_at}, newest
+    first), limits {max_chars, min_words, max_items}, errors (field "text", general "form"),
+    form {text} (what was typed, after a refusal), unavailable (None, or why the list could not be
+    loaded), next_path.
+
+    Samples are the extension panel's "voice" material: POST /write/voice/add sends one post to the
+    engine's /own-material/add, POST /write/voice/{id}/remove takes one away. -#}
+{% extends "base.html" %}
+{% from "_macros.html" import csrf, error_summary, app_tabbar, local_date with context %}
+{% block title %}Your voice · Starling{% endblock %}
+{% block description %}Add posts you wrote yourself so Starling's drafts sound like you.{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}app-page has-tabbar{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ static('css/write.css') }}">
+{% endblock %}
+{% block main %}
+{% set a = state.account %}
+{% set text_error = errors.text if errors and errors.text is defined else "" %}
+<div class="app-wrap">
+  <div class="app-head">
+    <h1>Your voice</h1>
+    <p class="lead">Add a few posts you wrote yourself. Starling learns how you write from them, never what to say, and never reuses their sentences.</p>
+  </div>
+
+  {% if a.status != "active" %}
+  <div class="notice notice-error">
+    <p class="notice-title">Your account is suspended</p>
+    <p><a href="/contact">Contact support</a> if you think this is a mistake.</p>
+  </div>
+  {% elif not a.email_verified %}
+  <div class="notice notice-warning">
+    <p class="notice-title">Confirm your email first</p>
+    <p>Starling can learn your voice as soon as you confirm your address.</p>
+    <p><a class="btn" href="/verify-email/sent">Enter the code</a></p>
+  </div>
+  {% elif not consent.given %}
+  {% include "write/_disclosure.html" %}
+  {% else %}
+  <form class="form wide" method="post" action="/write/voice/add">
+    {{ csrf() }}
+    {{ error_summary(errors, ["text"]) }}
+    <div class="field">
+      <label for="field-text">Paste one of your own posts</label>
+      <p class="hint" id="field-text-hint">One post at a time, as you wrote it. At least {{ limits.min_words }} words, at most {{ limits.max_chars|number }} characters.</p>
+      {% if text_error %}
+      <p class="field-error" id="field-text-error"><span class="visually-hidden">Error: </span>{{ text_error }}</p>
+      {% endif %}
+      <textarea id="field-text" name="text" rows="5" autocomplete="off" maxlength="{{ limits.max_chars }}" required aria-required="true" aria-describedby="field-text-hint{% if text_error %} field-text-error{% endif %}"{% if text_error %} aria-invalid="true"{% endif %}>{{ form.text if form and form.text is defined else "" }}</textarea>
+    </div>
+    <div class="button-row"><button class="btn btn-big" type="submit">Add it</button></div>
+  </form>
+
+  {% if unavailable %}
+  <div class="notice notice-warning" data-samples-unavailable>
+    <p>{{ unavailable }}</p>
+  </div>
+  {% endif %}
+
+  {% if samples is not none %}
+  <section aria-labelledby="samples-title">
+    <h2 id="samples-title">Your samples <span class="muted small">({{ samples|length }} of {{ limits.max_items }})</span></h2>
+    {% if samples %}
+    <ul class="item-list sample-list" role="list">
+      {% for sample in samples %}
+      <li>
+        <div class="item-main">
+          <p class="sample-text">{{ sample.text }}</p>
+          {% if sample.added_at %}<p class="small muted">Added {{ local_date(sample.added_at) }}</p>{% endif %}
+        </div>
+        <form method="post" action="/write/voice/{{ sample.id }}/remove">
+          {{ csrf() }}
+          <button class="btn btn-secondary btn-small" type="submit">Remove<span class="visually-hidden"> this sample</span></button>
+        </form>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="muted">No samples yet. Five or more of your own posts make a real difference; ten is better.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  <p class="small muted voice-tip">On a computer, the Chrome extension can add your posts straight from your X profile. Samples you add in either place are the same list. <a href="/write">Back to writing</a></p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block tabbar %}{{ app_tabbar("voice") }}{% endblock %}

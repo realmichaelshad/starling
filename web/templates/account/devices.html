@@ -1,0 +1,44 @@
+{#- GET /account/devices, POST /account/devices/{id}/revoke
+    Extra context: devices = list of {id, label, extension_version, created_at, last_used_at (or null)},
+    active (not revoked) devices only. -#}
+{% extends "_account_layout.html" %}
+{% block title %}Devices · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, local_date, store_button with context %}
+<h1>Devices</h1>
+<p class="lead">Browsers where the Starling extension is connected to your account.</p>
+<section class="panel" aria-labelledby="connected-title">
+<h2 id="connected-title">Connected browsers</h2>
+{% if devices %}
+<ul class="item-list">
+{% for d in devices %}
+  <li>
+    <div class="item-main">
+      <p class="item-title">{{ d.label }}</p>
+      <p class="muted small">Extension {{ d.extension_version }} · Connected {{ local_date(d.created_at) }} · {% if d.last_used_at %}Last used {{ local_date(d.last_used_at) }}{% else %}Not used yet{% endif %}</p>
+    </div>
+    <form method="post" action="/account/devices/{{ d.id }}/revoke" data-confirm-twice="Click again to disconnect">
+      {{ csrf() }}
+      <button class="btn btn-secondary" type="submit"><span data-confirm-label>Disconnect</span><span class="visually-hidden"> {{ d.label }}</span></button>
+    </form>
+  </li>
+{% endfor %}
+</ul>
+{% else %}
+<div class="empty">
+  <p class="empty-title">No browsers are connected</p>
+  <p>Add Starling to Chrome. Then open x.com and, in the Starling panel, choose Sign in.</p>
+  <div class="button-row">
+    {{ store_button() }}
+    <a class="btn btn-secondary" href="/docs/getting-started">Setup guide</a>
+  </div>
+</div>
+{% endif %}
+</section>
+
+<section class="panel" aria-labelledby="about-disconnecting">
+<h2 id="about-disconnecting">What disconnecting does</h2>
+<p>The extension in that browser is signed out straight away and can no longer draft with your account. To connect it again, press Sign in on the Starling panel in that browser.</p>
+<p class="muted small">A connection also ends after 60 days without use, and after one year in any case. Resetting your password disconnects every browser.</p>
+</section>
+{% endblock %}

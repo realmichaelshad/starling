@@ -1,0 +1,41 @@
+{#- GET/POST /signup (auth/routes.py)
+    Extra context: errors (dict; fields email, password; general "form"), form {email}.
+    POST fields: csrf_token, email, password.
+    site.google_sign_in: "Sign up with Google" is shown above the form; it creates the account at once,
+    so the terms sentence sits under both. -#}
+{% extends "base.html" %}
+{% block title %}Create your account · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{#- The header keeps "Sign in" for people who already have an account; "Create account" would repeat this page. -#}
+{% block nav_cta %}
+        <li><a href="/login">Sign in</a></li>
+{% endblock %}
+{% block main %}
+{% from "_macros.html" import auth_divider, csrf, error_summary, google_button, input_field with context %}
+{% set frm = form if form else {} %}
+{% set google = site.google_sign_in is defined and site.google_sign_in %}
+{% set next_path = next if next is defined and next else "/account" %}
+<div class="narrow">
+  <header class="page-header">
+    <h1>Create your account</h1>
+    <p class="lead">Start on the Free plan. No card needed.</p>
+  </header>
+  {% if google %}
+  <div class="auth-providers">
+    {{ google_button("/auth/google?intent=signup&next=" ~ next_path|urlencode, "Sign up with Google") }}
+  </div>
+  {{ auth_divider("or use your email") }}
+  {% endif %}
+  <form class="form" method="post" action="/signup" novalidate>
+    {{ csrf() }}
+    {% if next_path != "/account" %}<input type="hidden" name="next" value="{{ next_path }}">{% endif %}
+    {{ error_summary(errors, ["email", "password"]) }}
+    {{ input_field("email", "Email address", type="email", autocomplete="email", value=(frm.email if frm.email is defined else ""), errors=errors, spellcheck=false, inputmode="email", autofocus=not google) }}
+    {{ input_field("password", "Password", type="password", autocomplete="new-password", errors=errors, hint="At least 10 characters. A few random words work well.") }}
+    <div><button class="btn" type="submit">Create account</button></div>
+  </form>
+  <p class="hint terms-note">By creating an account{% if google %}, with Google or your email,{% endif %} you confirm that you are at least 18 years old, agree to the <a href="/terms">Terms of Service</a> and confirm that you have read the <a href="/privacy">Privacy Policy</a>.</p>
+  <p class="form-footer">Already have an account? <a href="/login{% if next_path != '/account' %}?next={{ next_path|urlencode }}{% endif %}">Sign in</a></p>
+</div>
+{% endblock %}

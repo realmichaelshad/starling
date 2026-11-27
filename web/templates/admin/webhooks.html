@@ -1,0 +1,48 @@
+{#- GET /admin/webhooks?status=
+    Extra context: admin, status_filter (all | received | processed | failed),
+    summary {received, processed, failed, oldest_pending_at or null, last_processed_at or null},
+    events [{event_id, type, status, attempts, last_error or null, received_at, processed_at or null, livemode}]. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Webhooks · Owner dashboard · Starling{% endblock %}
+{% block content %}
+<h1>Stripe webhooks</h1>
+{% set healthy = summary.failed == 0 and summary.oldest_pending_at is none %}
+<p><span class="{{ 'health-ok' if healthy else 'health-bad' }}">{{ "Healthy" if healthy else "Needs attention" }}</span>: {{ summary.received|number }} waiting to be processed, {{ summary.processed|number }} processed, {{ summary.failed|number }} failed.{% if summary.oldest_pending_at %} Oldest waiting since {{ summary.oldest_pending_at|datetime }}.{% endif %}{% if summary.last_processed_at %} Last processed {{ summary.last_processed_at|datetime }}.{% endif %}</p>
+<p class="small muted">Failed events are retried automatically at startup and by the hourly reconciler.</p>
+<form class="filter-form" method="get" action="/admin/webhooks">
+  <div class="field">
+    <label for="field-status">Show events</label>
+    <select id="field-status" name="status">
+    {% for value, label in [("all", "All"), ("received", "Waiting"), ("processed", "Processed"), ("failed", "Failed")] %}
+      <option value="{{ value }}"{% if status_filter == value %} selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-secondary" type="submit">Show</button>
+</form>
+{% if events %}
+<div class="table-wrap" role="region" aria-label="Webhook events" tabindex="0">
+  <table>
+    <thead><tr><th scope="col" class="when">Received</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col" class="num">Attempts</th><th scope="col">Processed</th><th scope="col">Last error</th><th scope="col">Event</th></tr></thead>
+    <tbody>
+    {% for e in events %}
+      <tr>
+        <td class="when">{{ e.received_at|datetime }}</td>
+        <td class="mono">{{ e.type }}</td>
+        <td class="{{ 'health-bad' if e.status == 'failed' else '' }}">{{ e.status }}{% if not e.livemode %} (test){% endif %}</td>
+        <td class="num">{{ e.attempts }}</td>
+        <td class="when">{{ e.processed_at|datetime if e.processed_at else "Not yet" }}</td>
+        <td>{{ e.last_error if e.last_error else "" }}</td>
+        <td class="mono">{{ e.event_id }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty-title">No events match this filter</p>
+  <p>Choose All to see every event Stripe has sent.</p>
+</div>
+{% endif %}
+{% endblock %}

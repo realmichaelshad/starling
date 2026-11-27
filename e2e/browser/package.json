@@ -1,0 +1,17 @@
+{
+  "name": "starling-e2e-browser",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Browser journeys for Starling: the real Chrome extension on an X fixture, against the local harness (mocked providers).",
+  "scripts": {
+    "journeys": "node run.mjs",
+    "spike": "node spikes/auth-window.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "playwright": "1.62.0"
+  }
+}

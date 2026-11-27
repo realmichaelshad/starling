@@ -1,0 +1,43 @@
+{#- GET /connect after sign-in (devices/routes.py), POST /connect/approve, POST /connect/deny  (CONTRACTS 9)
+    Extra context: extension_id, device_label, connect_request_id, connect_state.
+    Both POSTs send csrf_token, connect_request_id and connect_state. Approval is never a GET.
+    The gateway sends this page with a CSP whose form-action also allows the extension's
+    chromiumapp.org redirect. -#}
+{% extends "base.html" %}
+{% block title %}Connect the Starling extension · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block referrer %}no-referrer{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf with context %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">Extension</p>
+    <h1>Connect this browser?</h1>
+    <p class="lead">The Starling extension in {{ device_label }} will draft with your account{% if user %} ({{ user.email if user.email is defined else user.email_masked }}){% endif %} and use your plan's allowance.</p>
+  </header>
+  <form class="form" method="post" action="/connect/approve">
+    {{ csrf() }}
+    <input type="hidden" name="connect_request_id" value="{{ connect_request_id }}">
+    <input type="hidden" name="connect_state" value="{{ connect_state }}">
+    <div><button class="btn" type="submit">Connect this browser</button></div>
+  </form>
+  <p class="muted small">Only connect if you just pressed Sign in on the Starling panel yourself.</p>
+  <form method="post" action="/connect/deny">
+    {{ csrf() }}
+    <input type="hidden" name="connect_request_id" value="{{ connect_request_id }}">
+    <input type="hidden" name="connect_state" value="{{ connect_state }}">
+    <p class="small"><button class="link-button" type="submit">Deny</button> if you did not.</p>
+  </form>
+  <details class="disclosure">
+    <summary>Technical details</summary>
+    <dl class="definition-list small">
+      <dt>Browser name</dt>
+      <dd>{{ device_label }}</dd>
+      <dt>Extension ID</dt>
+      <dd class="mono">{{ extension_id }}</dd>
+    </dl>
+  </details>
+  <p class="small muted">You can disconnect this browser at any time from Devices in your account.</p>
+</div>
+{% endblock %}

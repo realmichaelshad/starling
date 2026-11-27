@@ -1,0 +1,44 @@
+﻿# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / extension builds
+node_modules/
+.output/
+.output-*/
+.wxt/
+extension/dist/
+e2e/.run/
+e2e/test-results/
+e2e/playwright-report/
+
+# Runtime data, secrets and logs (never committed)
+.env
+.env.*
+!.env.example
+!extension/.env.e2e
+data/
+# ...except the engine's bundled craft manual, which is source, not runtime data. The broad rule
+# above once kept it out of Git, so a clean checkout ran the engine without it and 13 tests failed.
+!backend/engine/app/data/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.log
+backups/
+outbox/
+
+# Optional and never committed: whoever cuts a release can list their own private names here for
+# the release check to look for (scripts/check_release.py).
+scripts/release_private_patterns.json
+
+# Local tooling
+.idea/
+.vscode/
+*.swp

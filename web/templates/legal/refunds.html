@@ -1,0 +1,32 @@
+{#- GET /refunds  Extra context: subprocessors. site.legal.REFUND_POLICY holds the operator's refund policy. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Refund policy · Starling{% endblock %}
+{% block description %}How cancellations, plan changes, failed payments and refunds work for Starling subscriptions.{% endblock %}
+{% block heading %}Refund policy{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<p>This policy explains how cancellations, plan changes and refunds work for Starling subscriptions sold by {{ L.OPERATOR_COMPANY_NAME|placeholders }}.</p>
+
+<h2 id="cancel">Cancelling</h2>
+<p>You can cancel a paid plan at any time from <a href="/account/billing">Billing</a>. You keep your paid plan until the end of the period you have already paid for. After that your account moves to Free and you are not charged again.</p>
+
+<h2 id="changes">Changing plans</h2>
+<ul>
+  <li><strong>Upgrades</strong> are charged straight away for the rest of the current period (a prorated amount), and the new plan applies once that payment goes through.</li>
+  <li><strong>Downgrades</strong> take effect at the end of the current period. There is no charge for scheduling one, and you can undo it before it happens.</li>
+</ul>
+
+<h2 id="usage">Usage and charges</h2>
+<p>Plans have a fixed monthly price. There are no overage charges. Requests that fail, even partway through, requests cancelled before anything is shown, and drafts Starling holds back after its own checks do not use your allowance.</p>
+
+<h2 id="refunds">Refunds</h2>
+<p>{{ L.REFUND_POLICY|placeholders }}</p>
+<p>Nothing in this policy limits any rights you have under the consumer laws where you live.</p>
+
+<h2 id="failed-payments">Failed payments and disputes</h2>
+<p>If a renewal payment fails, you keep paid access for a short grace period while you update your payment method. If you believe a charge is wrong, please contact us before disputing it with your bank; while a dispute is open, paid features on the account are paused.</p>
+
+<h2 id="request">How to ask for a refund</h2>
+<p>Email {{ legal_email(L.OPERATOR_CONTACT_EMAIL) }} from the address on your Starling account, with the date of the charge. Never send your password or full card number.</p>
+{% endblock %}

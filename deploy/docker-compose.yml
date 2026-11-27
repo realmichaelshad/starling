@@ -1,0 +1,57 @@
+# Local runs and the clean-checkout test. Run from the repository root:
+#
+#   cp .env.example .env                      then fill it in (keep STARLING_ENV=development locally)
+#   docker compose -f deploy/docker-compose.yml up --build
+#   docker compose -f deploy/docker-compose.yml --profile test run --rm --build starling-test
+#
+# Relative paths are resolved from this folder (deploy/): the build context is the repository root
+# and the env file is the repository-root .env.
+#
+# One service, one container, one gateway worker: per-account slots and the engine pool live in the
+# gateway's memory and SQLite has one writer. Never scale the starling service beyond one replica.
+
+name: starling
+
+services:
+  starling:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: runtime
+    image: starling:local
+    env_file:
+      - path: ../.env
+        required: false # without it the image's STARLING_ENV=production applies and the container refuses to start unconfigured
+    ports:
+      - "127.0.0.1:8765:8080" # host 8765 -> gateway 8080, loopback only for local runs
+    volumes:
+      - starling_data:/data
+    init: false # tini is already PID 1 inside the image
+    restart: unless-stopped
+    stop_grace_period: 30s # engines get 10 s to finish (CONTRACTS 3.1), then services and gateway
+    security_opt:
+      - no-new-privileges:true
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import sys, urllib.request; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/healthz', timeout=4).status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 60s
+
+  starling-test:
+    profiles: ["test"]
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+      target: test
+    image: starling:test
+    init: false
+    network_mode: none # the test suites must not reach the network
+    restart: "no"
+
+volumes:
+  starling_data:

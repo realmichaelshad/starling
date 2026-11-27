@@ -1,0 +1,8 @@
+# Development and CI tools. Never installed in the production image.
+#
+# Local setup:   pip install -r backend/requirements.in -r backend/requirements-dev.txt
+# Docker `test` target: installed on top of the locked runtime packages, with the lock as a
+# constraint so these tools cannot change a runtime version.
+pytest>=9.1.1,<10
+pip-tools>=7.4
+pip-audit>=2.10,<3

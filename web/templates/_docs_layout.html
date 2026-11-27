@@ -1,0 +1,37 @@
+{#- Documentation pages: GET /docs/<page>. No extra context. -#}
+{% extends "base.html" %}
+{% block main %}
+{% from "_macros.html" import nav_link with context %}
+{% set docs_pages = [
+  ("getting-started", "Getting started"),
+  ("writing", "Writing with Starling"),
+  ("panel", "The Starling panel"),
+  ("plans-and-usage", "Plans and usage"),
+  ("privacy-and-data", "Privacy and data"),
+  ("troubleshooting", "Troubleshooting"),
+] %}
+<div class="wrap layout-sidebar">
+  <nav class="sidenav" aria-label="Documentation">
+    <p class="sidenav-title">Documentation</p>
+    <ul>
+    {% for slug, label in docs_pages %}
+      <li>{{ nav_link("/docs/" ~ slug, label, request_path == "/docs/" ~ slug) }}</li>
+    {% endfor %}
+    </ul>
+  </nav>
+  <article class="content prose">
+    {% block content %}{% endblock %}
+    {% set ns = namespace(prev=none, next=none, found=false) %}
+    {% for slug, label in docs_pages %}
+      {% if ns.found and ns.next is none %}{% set ns.next = (slug, label) %}{% endif %}
+      {% if request_path == "/docs/" ~ slug %}{% set ns.found = true %}{% elif not ns.found %}{% set ns.prev = (slug, label) %}{% endif %}
+    {% endfor %}
+    {% if ns.found %}
+    <nav class="pager" aria-label="Previous and next page">
+      {% if ns.prev %}<a href="/docs/{{ ns.prev[0] }}">Previous: {{ ns.prev[1] }}</a>{% else %}<span></span>{% endif %}
+      {% if ns.next %}<a href="/docs/{{ ns.next[0] }}">Next: {{ ns.next[1] }}</a>{% endif %}
+    </nav>
+    {% endif %}
+  </article>
+</div>
+{% endblock %}

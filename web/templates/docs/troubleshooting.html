@@ -1,0 +1,91 @@
+{% extends "_docs_layout.html" %}
+{% block title %}Troubleshooting · Starling docs{% endblock %}
+{% block description %}What each Starling extension message means and what to do: signed out, verify email, limit reached, payment problem, rate limited, busy and more.{% endblock %}
+{% block content %}
+<h1>Troubleshooting</h1>
+<p class="lead">When Starling cannot draft, the extension tells you why. Find the message below to see what it means and what to do.</p>
+<ul>
+  <li><a href="#signed-out">Signed out</a></li>
+  <li><a href="#verify-email">Verify your email</a></li>
+  <li><a href="#consent-needed">Consent needed</a></li>
+  <li><a href="#limit-reached">Limit reached</a></li>
+  <li><a href="#payment-problem">Payment problem</a></li>
+  <li><a href="#rate-limited">Rate limited</a></li>
+  <li><a href="#busy">Busy</a></li>
+  <li><a href="#ai-unavailable">AI unavailable</a></li>
+  <li><a href="#drafting-paused">Drafting paused</a></li>
+  <li><a href="#offline">Offline</a></li>
+  <li><a href="#interrupted">Interrupted</a></li>
+  <li><a href="#update-extension">Update the extension</a></li>
+  <li><a href="#account-suspended">Account suspended</a></li>
+  <li><a href="#not-showing">Starling does not appear on X</a></li>
+  <li><a href="#sign-in-window">The sign-in window shows an error</a></li>
+</ul>
+
+<h2 id="signed-out">Signed out</h2>
+<p><strong>What it means:</strong> the extension is not connected to a Starling account. This happens after you sign out, disconnect the browser from Devices or reset your password, and after a long time without use.</p>
+<p><strong>What to do:</strong> open the panel, choose Sign in and approve the connection. See <a href="/docs/getting-started#connect">Connect the extension</a>.</p>
+
+<h2 id="verify-email">Verify your email</h2>
+<p><strong>What it means:</strong> your email address is not verified yet, so Starling cannot draft for your account.</p>
+<p><strong>What to do:</strong> type the 6-digit code from the confirmation email on the page that asks for it, or open the link in that email. If you cannot find it, check your spam folder, then choose <strong>Send the email again</strong> on that page or on your <a href="/account">account page</a>.</p>
+
+<h2 id="consent-needed">Consent needed</h2>
+<p><strong>What it means:</strong> you have not agreed to the drafting consent, you withdrew it, or its terms changed since you agreed.</p>
+<p><strong>What to do:</strong> read the consent screen in the extension and agree if you want Starling to draft. See <a href="/docs/getting-started#consent">Choose what Starling may use</a>.</p>
+
+<h2 id="limit-reached">Limit reached</h2>
+<p><strong>What it means:</strong> you have used all the drafts for this period, or your account reached the plan's fair-use limit. Nothing extra is charged.</p>
+<p><strong>What to do:</strong> wait until your allowance resets (the date is shown in the message and on your <a href="/account">account page</a>), or upgrade on the <a href="/pricing">Pricing page</a>.</p>
+
+<h2 id="payment-problem">Payment problem</h2>
+<p><strong>What it means:</strong> the latest payment for your plan failed or needs you to confirm it, for example with your bank's verification.</p>
+<p><strong>What to do:</strong> go to <a href="/account/billing">Billing</a> and choose Update payment method. You keep paid access for a short grace period while you fix it.</p>
+
+<h2 id="rate-limited">Rate limited</h2>
+<p><strong>What it means:</strong> you sent more requests in a short time than your plan allows.</p>
+<p><strong>What to do:</strong> wait for the time shown in the message, then try again.</p>
+
+<h2 id="busy">Busy</h2>
+<p><strong>What it means:</strong> Starling is still working on another request for your account. One request runs at a time, and one more can wait briefly.</p>
+<p><strong>What to do:</strong> let the current draft finish or cancel it, then try again. Check other tabs or browsers where you use Starling.</p>
+
+<h2 id="ai-unavailable">AI unavailable</h2>
+<p><strong>What it means:</strong> Starling's AI provider is having problems or is overloaded. Requests that fail this way do not use your allowance.</p>
+<p><strong>What to do:</strong> try again in a few minutes.</p>
+
+<h2 id="drafting-paused">Drafting paused</h2>
+<p><strong>What it means:</strong> Starling has paused drafting for everyone for a while, for example during maintenance or when the service's capacity for the day is used up. Your allowance is not used.</p>
+<p><strong>What to do:</strong> try again later. If the message shows a time, wait until then.</p>
+
+<h2 id="offline">Offline</h2>
+<p><strong>What it means:</strong> the extension cannot reach Starling, usually because your internet connection dropped or a network blocks the connection.</p>
+<p><strong>What to do:</strong> check your connection, reload x.com and try again. If other websites work and this continues, contact support.</p>
+
+<h2 id="interrupted">Interrupted</h2>
+<p><strong>What it means:</strong> the connection dropped, or the page reloaded, while a draft was being written.</p>
+<p><strong>What to do:</strong> try again. For a short time the extension can recover a draft that finished during the interruption. If text had already appeared before the interruption, that request counts toward your allowance; if nothing was shown, it does not.</p>
+
+<h2 id="update-extension">Update the extension</h2>
+<p><strong>What it means:</strong> your version of the extension is too old to work with the service.</p>
+<p><strong>What to do:</strong> Chrome updates extensions automatically, usually within a few hours. To update sooner, restart Chrome. If the message stays, remove Starling from Chrome and add it again from the Chrome Web Store; your account and data are kept.</p>
+
+<h2 id="account-suspended">Account suspended</h2>
+<p><strong>What it means:</strong> the account has been suspended, for example while a payment dispute is open or after a breach of the <a href="/acceptable-use">Acceptable use policy</a>.</p>
+<p><strong>What to do:</strong> contact support using the address below.</p>
+
+<h2 id="not-showing">Starling does not appear on X</h2>
+<ul>
+  <li>Check that you are using desktop Chrome, version 120 or later.</li>
+  <li>Make sure Starling is turned on in Chrome's Extensions page.</li>
+  <li>Reload x.com.</li>
+  <li>The ✦ button appears on posts and in X's composers. Open a reply box to check.</li>
+</ul>
+
+<h2 id="sign-in-window">The sign-in window shows an error</h2>
+<p>Connection requests expire after a short time and can only be used once. Close the window, press Sign in on the Starling panel again and approve promptly. If the page says the extension is not recognised, make sure you installed Starling from the Chrome Web Store.</p>
+
+<h2 id="contact">Still stuck?</h2>
+{% from "_macros.html" import support_cta with context %}
+<p>{{ support_cta() }} with the message the extension showed and roughly when it happened. Never send your password.</p>
+{% endblock %}

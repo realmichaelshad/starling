@@ -1,0 +1,223 @@
+{#- GET /account  Extra context: state (CONTRACTS 6.2, from account_state(); same numbers as the extension);
+    devices_count (browsers connected to this account, for the "Get started" checklist).
+    Numbers are rendered exactly as given; the template never recomputes remaining. -#}
+{% extends "_account_layout.html" %}
+{% block title %}Your account · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, store_button, usage_meter, local_date, local_datetime with context %}
+{% set a = state.account %}
+{% set p = state.plan %}
+{% set u = state.usage %}
+{% set status_labels = {"free": "Free plan", "active": "Active", "past_due": "Payment problem", "suspended": "Suspended"} %}
+{% set own_email = user.email if user and user.email is defined else a.email_masked %}
+<h1>Your account</h1>
+<p class="lead">Signed in as {{ own_email }}</p>
+
+{% if a.status == "suspended" or p.status == "suspended" %}
+<div class="notice notice-error">
+  <p class="notice-title">Your account is suspended</p>
+  <p>Paid features and drafting may be unavailable while the suspension lasts. <a href="/contact">Contact support</a> if you think this is a mistake.</p>
+</div>
+{% elif a.status == "deleting" %}
+<div class="notice notice-warning">
+  <p class="notice-title">Your account is being deleted</p>
+  <p>Deletion is in progress. Contact support straight away if you did not ask for this.</p>
+</div>
+{% endif %}
+
+{#- The first visit is the moment of highest intent: say what to do next, in order, with one action
+    each. Shown until the first draft. -#}
+{% set connected = devices_count is defined and devices_count > 0 %}
+{% if u.used == 0 and u.reserved == 0 %}
+{% set done = [a.email_verified, connected, connected]|select|list|length %}
+<section class="panel get-started" aria-labelledby="start-title">
+  <h2 id="start-title">Get started</h2>
+  <p class="muted small">{{ done }} of 4 done</p>
+  <ol class="checklist" role="list">
+    <li class="{{ 'is-done' if a.email_verified }}">
+      <span class="check" aria-hidden="true">{% if a.email_verified %}✓{% else %}1{% endif %}</span>
+      <div class="checklist-body">
+        <p class="item-title">Confirm your email{% if a.email_verified %}<span class="visually-hidden"> (done)</span>{% endif %}</p>
+        {% if a.email_verified %}
+        <p class="muted small">Done.</p>
+        {% else %}
+        <p class="muted small">We sent a 6-digit code and a link to {{ own_email }}. Starling can draft as soon as you confirm.</p>
+        <div class="button-row">
+          <a class="btn" href="/verify-email/sent">Enter the code</a>
+          <form method="post" action="/account/verify/resend">
+            {{ csrf() }}
+            <button class="link-button" type="submit">Send the email again</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+    </li>
+    <li class="{{ 'is-done' if connected }}">
+      <span class="check" aria-hidden="true">{% if connected %}✓{% else %}2{% endif %}</span>
+      <div class="checklist-body">
+        <p class="item-title">Add Starling to Chrome{% if connected %}<span class="visually-hidden"> (done)</span>{% endif %}</p>
+        {% if connected %}
+        <p class="muted small">Done.</p>
+        {% else %}
+        <p class="muted small">Desktop Chrome 120 or later. It lives inside X, so there is nothing else to open.</p>
+        <div class="button-row">{{ store_button(secondary=not a.email_verified) }}</div>
+        {% endif %}
+      </div>
+    </li>
+    <li class="{{ 'is-done' if connected }}">
+      <span class="check" aria-hidden="true">{% if connected %}✓{% else %}3{% endif %}</span>
+      <div class="checklist-body">
+        <p class="item-title">Connect it to this account{% if connected %}<span class="visually-hidden"> (done)</span>{% endif %}</p>
+        {% if connected %}
+        <p class="muted small">Done. Connected browsers are listed under <a href="/account/devices">Devices</a>.</p>
+        {% else %}
+        <p class="muted small">Open x.com. In the Starling panel, choose Sign in, then Connect this browser.</p>
+        <div class="button-row"><a class="btn btn-secondary" href="https://x.com/" target="_blank" rel="noopener">Open x.com</a></div>
+        {% endif %}
+      </div>
+    </li>
+    <li>
+      <span class="check" aria-hidden="true">4</span>
+      <div class="checklist-body">
+        <p class="item-title">Make your first draft</p>
+        <p class="muted small">Open your own profile on X, and in the Starling panel's Settings press "Add my posts from this page" so Starling learns your voice. Then press ✦ under any post.</p>
+      </div>
+    </li>
+  </ol>
+</section>
+{% elif not a.email_verified %}
+<div class="notice notice-warning">
+  <p class="notice-title">Confirm your email to keep drafting</p>
+  <p>We sent a 6-digit code and a link to {{ own_email }}.</p>
+  <div class="button-row">
+    <a class="btn" href="/verify-email/sent">Enter the code</a>
+    <form method="post" action="/account/verify/resend">
+      {{ csrf() }}
+      <button class="link-button" type="submit">Send the email again</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if p.payment_problem or p.status == "past_due" %}
+{#- The same three situations as account/billing.html, in fewer words; Billing has the detail. -#}
+{% set issue = p.payment_issue if p.payment_issue is defined and p.payment_issue else none %}
+{% set issue_kind = issue.kind if issue else ("first_payment" if p.code == "free" else "renewal") %}
+{% set issue_plan = issue.plan_name if issue and issue.plan_name else none %}
+<div class="notice notice-error" data-payment-notice="{{ "first" if issue_kind == "first_payment" else issue_kind }}">
+  <p class="notice-title">There is a problem with your payment</p>
+  {% if issue_kind == "first_payment" %}
+  <p>Your {{ issue_plan ~ " " if issue_plan }}payment is not finished, so you have not been charged and you are still on Free. You can finish it, or choose a different plan, on the Billing page.</p>
+  <p><a class="btn" href="/account/billing">Go to Billing</a></p>
+  {% else %}
+  {% if issue_kind == "lapsed" %}
+  <p>Your {{ issue_plan ~ " " if issue_plan }}payment did not go through and the grace period has ended, so your account is on Free for now. Update your payment method and {{ issue_plan if issue_plan else "your plan" }} returns as soon as the payment succeeds.</p>
+  {% else %}
+  <p>Update your payment method to keep {{ p.name }}. You keep paid access for a short grace period while you fix it.</p>
+  {% endif %}
+  <form method="post" action="/billing/portal">
+    {{ csrf() }}
+    <input type="hidden" name="flow" value="payment_method_update">
+    <button class="btn" type="submit">Update payment method</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if state.service.status == "paused" %}
+{#- CONTRACTS 6.2 `service.scope`: "free" pauses only the Free plan (its own daily AI budget); paid
+    plans keep drafting, so this is the one pause with somewhere to go. -#}
+{% set free_only = state.service.scope is defined and state.service.scope == "free" %}
+<div class="notice notice-warning" data-service-notice="{{ 'free' if free_only else 'all' }}">
+  {% if free_only %}
+  <p class="notice-title">Drafting on the Free plan is paused{% if state.service.retry_at %} until {{ local_datetime(state.service.retry_at) }}{% endif %}</p>
+  <p>Paid plans keep drafting. Your allowance is not used while drafting is paused. <a href="/pricing">See plans</a></p>
+  {% else %}
+  <p class="notice-title">Drafting is paused for everyone right now</p>
+  <p>{{ state.service.message if state.service.message else "Please try again later." }} Your allowance is not used while drafting is paused.</p>
+  {% endif %}
+</div>
+{% endif %}
+
+{% if u.remaining <= 0 %}
+<div class="notice notice-warning" data-usage-notice="limit">
+  <p class="notice-title">You have used all your {{ u.unit_label }} for this period</p>
+  <p>Your allowance resets on {{ local_date(u.resets_at) }}. There are no overage charges. <a href="/pricing">Compare plans</a></p>
+</div>
+{% elif u.fair_use_blocked %}
+<div class="notice notice-warning" data-usage-notice="fair-use">
+  <p class="notice-title">Drafting is paused until {{ local_date(u.resets_at) }}</p>
+  <p>Your account reached this period's fair-use limit. Nothing extra is charged.</p>
+</div>
+{% elif u.near_limit %}
+<div class="notice notice-warning" data-usage-notice="near-limit">
+  <p class="notice-title">You are close to your limit</p>
+  <p>{{ u.remaining|number }} {{ u.unit_label }} left until {{ local_date(u.resets_at) }}. <a href="/pricing">Compare plans</a></p>
+</div>
+{% endif %}
+
+<section class="panel" aria-labelledby="usage-title">
+  <h2 id="usage-title">Usage this period</h2>
+  <p class="big-figure"><span data-usage="remaining">{{ u.remaining|number }}</span> {{ u.unit_label }} left</p>
+  {{ usage_meter(u, live=true) }}
+  <p class="small muted">{% if u.reserved > 0 %}<span data-usage="reserved">{{ u.reserved|number }}</span> in progress · {% endif %}Resets on <time datetime="{{ u.resets_at|iso }}" data-local-date data-usage="resets_at" data-value="{{ u.resets_at }}">{{ u.resets_at|date }}</time></p>
+  <p class="small muted">Each draft, and each answer in the side panel, uses {{ "one" if u.per_request is not defined or u.per_request == 1 else u.per_request|number }}. Failed requests, requests you cancel before anything appears, and drafts Starling holds back do not count. <a href="/docs/plans-and-usage#what-uses">What counts</a></p>
+</section>
+
+<section class="panel" aria-labelledby="plan-title">
+  <h2 id="plan-title">Plan</h2>
+  <dl class="definition-list">
+    <dt>Current plan</dt>
+    <dd data-plan="{{ p.code }}">{{ p.name }}</dd>
+    {% if p.status in ("past_due", "suspended") %}
+    <dt>Status</dt>
+    <dd>{{ status_labels.get(p.status, p.status|capitalize) }}</dd>
+    {% endif %}
+    {% if p.code != "free" %}
+    {% if p.cancel_at %}
+    <dt>Ends on</dt>
+    <dd>{{ local_date(p.cancel_at) }}, then your account moves to Free</dd>
+    {% else %}
+    <dt>Renews on</dt>
+    <dd>{{ local_date(p.period_end) }}</dd>
+    {% endif %}
+    {% endif %}
+    {% if p.scheduled_change %}
+    <dt>Scheduled change</dt>
+    <dd>Your plan changes on {{ local_date(p.scheduled_change.effective_at) }}. <a href="/account/billing">See Billing</a></dd>
+    {% endif %}
+  </dl>
+  <div class="button-row">
+    {% if p.code == "free" %}
+    <a class="btn" href="/pricing">See paid plans</a>
+    <a class="btn btn-secondary" href="/account/billing">Billing</a>
+    {% else %}
+    <a class="btn btn-secondary" href="/account/billing">Manage billing</a>
+    {% endif %}
+  </div>
+</section>
+
+<section class="panel" aria-labelledby="extension-title">
+  <h2 id="extension-title">Extension</h2>
+  {% if connected %}
+  <p>Connected in {{ devices_count }} browser{{ "s" if devices_count != 1 }}, listed under <a href="/account/devices">Devices</a>.</p>
+  {% elif u.used == 0 and u.reserved == 0 %}
+  <p>Not connected yet: the Get started steps above add it.</p>
+  {% else %}
+  <p>Not connected in any browser. Add Starling to Chrome, then open x.com and, in the Starling panel, choose Sign in.</p>
+  <div class="button-row">{{ store_button(secondary=true) }}</div>
+  {% endif %}
+  <dl class="definition-list">
+    <dt>Drafting consent</dt>
+    <dd>{% if state.consent.accepted_version and state.consent.accepted_version == state.consent.required_version %}Given{% elif state.consent.accepted_version %}Needs renewing: the extension will ask you again{% else %}Not given yet: the extension will ask you{% endif %}</dd>
+    <dt>Learning from your own activity</dt>
+    <dd>{{ "On" if state.consent.passive_learning else "Off" }} (change it in the extension)</dd>
+  </dl>
+</section>
+
+<section class="panel" aria-labelledby="phone-title">
+  <h2 id="phone-title">On your phone</h2>
+  <p>The extension needs desktop Chrome. On a phone, the writing page drafts replies, quotes and posts with the same voice and plan: paste the post or its link, then copy the draft into the X app.</p>
+  <div class="button-row"><a class="btn btn-secondary" href="/write">Open the writing page</a></div>
+</section>
+{% endblock %}

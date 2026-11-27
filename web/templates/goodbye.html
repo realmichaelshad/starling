@@ -1,0 +1,26 @@
+{#- GET /goodbye (account/routes.py), right after an account is deleted. No sign-in: the account is gone.
+    Extra context: email (the address the confirmation went to, or null), plan_name (the paid plan that
+    was cancelled, or null), pending (bool: the last steps are still finishing). -#}
+{% extends "base.html" %}
+{% block title %}Your account is deleted · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">Account deleted</p>
+    <h1>{% if pending %}Your account is being deleted{% else %}Your Starling account is deleted{% endif %}</h1>
+    <p class="lead">{% if pending %}The last steps finish in the next few minutes. You do not need to do anything.{% else %}Your account and the data Starling kept for drafting are gone from the service.{% endif %}</p>
+  </header>
+  <ul class="goodbye-list">
+    {% if email %}<li>We sent a confirmation to <strong class="address">{{ email }}</strong>.</li>{% endif %}
+    {% if plan_name %}<li>Your {{ plan_name }} subscription is cancelled. You will not be charged again.</li>{% endif %}
+    <li>Remove the extension from Chrome: right-click the Starling icon in the toolbar and choose <strong>Remove from Chrome</strong>.</li>
+    <li>Encrypted backups are not edited; they age out within about three months, as the <a href="/privacy">Privacy Policy</a> explains.</li>
+  </ul>
+  <p>Changed your mind? You can create a new account at any time.</p>
+  <div class="button-row">
+    <a class="btn" href="/">Go to the home page</a>
+  </div>
+</div>
+{% endblock %}

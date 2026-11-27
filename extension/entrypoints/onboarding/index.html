@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Welcome to Starling</title>
+    <style>
+      /* The website's own fonts and colours (web/static/css/tokens.css), so the first page a new
+         customer sees looks like the Starling they signed up for. The font files are copies of the
+         website's, shipped inside the extension with their SIL Open Font License texts
+         (public/fonts/OFL-*.txt): an extension page may not load fonts from anywhere else. */
+      @font-face {
+        font-family: "Chakra Petch";
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url("/fonts/chakra-petch-600.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "IBM Plex Sans";
+        font-style: normal;
+        font-weight: 400 600;
+        font-display: swap;
+        src: url("/fonts/ibm-plex-sans-variable.woff2") format("woff2");
+      }
+      @font-face {
+        font-family: "IBM Plex Mono";
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url("/fonts/ibm-plex-mono-400.woff2") format("woff2");
+      }
+      :root {
+        color-scheme: dark;
+        --bg-page: #000000;
+        --bg-surface: #050505;
+        --bg-raised: #0c0c0d;
+        --text-primary: #faf8f3;
+        --text-secondary: #dad7cf;
+        --text-muted: #9a9d9f;
+        --text-error: #ff8f8f;
+        --button-bg: #faf8f3;
+        --button-fg: #000000;
+        --ui-focus: #faf8f3;
+        --ui-border-strong: #62666b;
+        --line: #212428;
+        --soft: rgba(255, 255, 255, .04);
+        --font-display: "Chakra Petch", "Bahnschrift", "DIN Alternate", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, Arial, sans-serif;
+        --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Roboto, "Noto Sans", Arial, sans-serif;
+        --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", "SFMono-Regular", Menlo, Consolas, "Liberation Mono", monospace;
+        --ease: cubic-bezier(.22, 1, .36, 1);
+        font-family: var(--font-body);
+      }
+      * { box-sizing: border-box; }
+      /* Set on body itself: Chrome gives extension pages its own default body font and a 75% size. */
+      body { margin: 0; min-height: 100vh; background: var(--bg-page); color: var(--text-primary); font-family: var(--font-body); font-size: 16px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+      .brand { display: flex; align-items: center; justify-content: center; padding: 40px 16px 8px; }
+      .brand img { display: block; width: 168px; height: auto; }
+      main { max-width: 680px; margin: 0 auto; padding: 16px 16px 64px; }
+      .card { background: var(--bg-surface); border: 1px solid var(--line); border-radius: 18px; padding: 32px 32px 28px; }
+      h1 { margin: 0 0 12px; font-family: var(--font-display); font-weight: 600; font-size: 30px; line-height: 1.15; letter-spacing: .005em; }
+      h2 { margin: 26px 0 8px; font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-secondary); }
+      p { margin: 0 0 12px; line-height: 1.6; }
+      ul { margin: 0; padding-left: 20px; }
+      li { margin: 6px 0; line-height: 1.55; color: var(--text-secondary); }
+      .lead { font-size: 17px; color: var(--text-primary); }
+      .muted { color: var(--text-muted); font-size: 14px; }
+      .note { color: var(--text-muted); font-size: 14px; margin-top: 14px; }
+      .note:empty { display: none; }
+      .links { margin-top: 18px; display: flex; gap: 16px; flex-wrap: wrap; font-size: 14px; }
+      a { color: var(--text-secondary); text-underline-offset: 3px; }
+      a:hover { color: var(--text-primary); }
+      kbd { font-family: var(--font-mono); font-size: 13px; padding: 2px 7px; border: 1px solid var(--ui-border-strong); border-radius: 6px; background: var(--bg-raised); color: var(--text-primary); white-space: nowrap; }
+      .check { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: start; margin-top: 24px; padding: 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--soft); cursor: pointer; }
+      .check input { margin: 4px 0 0; width: 16px; height: 16px; accent-color: var(--text-primary); }
+      .check span { font-weight: 600; }
+      .check .muted { grid-column: 2; margin: 0; }
+      .actions { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-top: 26px; }
+      button { font: inherit; font-family: var(--font-display); font-weight: 600; font-size: 15px; letter-spacing: .02em; min-height: 44px; border-radius: 999px; padding: 10px 22px; cursor: pointer; transition: opacity .18s var(--ease), background .18s var(--ease), border-color .18s var(--ease); }
+      button.primary { background: var(--button-bg); color: var(--button-fg); border: 1px solid var(--button-bg); }
+      button.primary:hover:not(:disabled) { opacity: .9; }
+      button.secondary { background: transparent; color: var(--text-primary); border: 1px solid var(--ui-border-strong); }
+      button.secondary:hover:not(:disabled) { border-color: var(--text-secondary); background: var(--soft); }
+      button:disabled { opacity: .55; cursor: default; }
+      button:focus-visible, a:focus-visible, input:focus-visible { outline: 2px solid var(--ui-focus); outline-offset: 3px; }
+      .problem { color: var(--text-error); margin-top: 16px; font-size: 14px; }
+      .problem.neutral { color: var(--text-muted); }
+      .problem:empty { display: none; }
+      .footnote { margin-top: 22px; padding-top: 16px; border-top: 1px solid var(--line); }
+      @media (max-width: 520px) { .card { padding: 24px 20px 22px; } h1 { font-size: 25px; } }
+      @media (prefers-reduced-motion: reduce) { button { transition: none; } }
+    </style>
+  </head>
+  <body>
+    <header class="brand"><img src="/assets/starling-wordmark.png" alt="Starling" width="168" height="26" /></header>
+    <main id="app" aria-live="polite"></main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

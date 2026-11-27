@@ -1,0 +1,73 @@
+{% extends "_docs_layout.html" %}
+{% block title %}Privacy and data · Starling docs{% endblock %}
+{% block description %}What the Starling extension sends, where it goes, what is stored, and how to export or delete your data.{% endblock %}
+{% block content %}
+<h1>Privacy and data</h1>
+<p class="lead">What the extension sends, where it goes, what is stored and how to export or delete it. The <a href="/privacy">Privacy Policy</a> is the formal statement; this page explains it in plain terms.</p>
+
+<h2 id="when">When anything is sent</h2>
+<p>Until you connect the extension to your account and agree to the drafting consent, it sends no content from X to Starling. Once connected, it also checks your session and plan so it can show your remaining drafts.</p>
+
+<h2 id="what">What is sent</h2>
+<div class="table-wrap" role="region" aria-label="Data the extension sends" tabindex="0">
+  <table>
+    <thead>
+      <tr><th scope="col">Data</th><th scope="col">When</th><th scope="col">Why</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>The post you ask about</td><td>When you press ✦, Create or Enhance, or attach a post in chat</td><td>To draft a relevant reply, quote or post</td></tr>
+      <tr><td>Text in the composer</td><td>When you choose Create or Enhance</td><td>To rewrite or build on what you wrote</td></tr>
+      <tr><td>Attached images, as small copies</td><td>When the post or your draft has images</td><td>So drafts can take the images into account</td></tr>
+      <tr><td>Your messages in the panel</td><td>When you send a message</td><td>To answer you</td></tr>
+      <tr><td>Writing samples, including posts of your own you add from your X profile</td><td>When you add them</td><td>To match your voice</td></tr>
+      <tr><td>The subjects you write about, as short topic names</td><td>When you ask for a post idea, and in the background on paid plans{% if site.web_search is defined and site.web_search %}; sent to the AI provider's web search{% endif %}</td><td>To suggest what is new in your niche. Never the text of your posts, samples, messages or drafts</td></tr>
+      <tr><td>Draft outcomes: whether you used, edited or discarded a draft</td><td>After a draft is placed</td><td>To improve later drafts</td></tr>
+      <tr><td>Your own profile and post stats</td><td>While you browse X, only if you turned on the optional learning choice</td><td>To learn what works for your account</td></tr>
+      <tr><td>Account and technical details: email address, browser name you approved, extension version, time zone</td><td>When you sign up, connect and use Starling</td><td>To run your account, apply your plan and show times correctly</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<h2 id="where">Where it goes</h2>
+<ul>
+  <li><strong>Starling's servers</strong>, operated by the company named in the <a href="/privacy">Privacy Policy</a>. They store your account and the data needed to draft for you, with each account's drafting data kept in its own isolated storage area.</li>
+  <li><strong>Starling's AI provider</strong>, which processes requests to generate drafts and answers. The current provider is listed on the <a href="/subprocessors">Subprocessors page</a>.</li>
+  <li><strong>Stripe</strong>, if you subscribe. Stripe collects your card details directly, so card numbers never reach Starling.</li>
+</ul>
+<p>Starling does not sell your data and does not show ads.</p>
+
+<h2 id="not-sent">What is not sent</h2>
+<ul>
+  <li>Your direct messages. Starling does not run on direct messages.</li>
+  <li>Your X password. Starling never asks for it.</li>
+  <li>Other people's posts you scroll past without asking about them.</li>
+  <li>Anything from websites other than X. The extension only works on X.</li>
+</ul>
+
+<h2 id="stored">What is stored</h2>
+<ul>
+  <li>Your account: email address, a salted hash of your password, your plan and billing status, and your connected browsers.</li>
+  <li>Your writing samples, confirmed preferences, draft outcomes and, if you turned it on, your own profile and post stats.</li>
+  <li>Usage records: when requests happened, whether they succeeded and how much of your allowance they used. They do not contain the text of your messages or drafts.</li>
+  <li>A finished draft is kept for 15 minutes, so the extension can recover it if the connection drops.</li>
+</ul>
+<p>Service logs never contain your messages, drafts, passwords or tokens. How long each kind of data is kept is set out in the <a href="/privacy">Privacy Policy</a>.</p>
+
+<h2 id="choices">Your choices</h2>
+<ul>
+  <li>Change or withdraw your consent in the extension at any time, and on the <a href="/write">writing page</a> for what you send from there.</li>
+  <li>Remove writing samples from the panel.</li>
+  <li>Disconnect a browser from <a href="/account/devices">Devices</a>. Removing the extension from Chrome also stops it sending anything.</li>
+  <li>Download a copy of your data, or delete your account, from <a href="/account/data">Your data</a>.</li>
+</ul>
+
+<h2 id="deleting">Deleting your account</h2>
+<p>Deleting your account disconnects every browser, cancels your subscription at once so that you are not billed again, and deletes your writing samples, preferences, draft outcomes and stats from the live service. Encrypted backup copies are not edited: they disappear as the backups age out, within about three months. The part of a paid period you have not used is not refunded when you delete your account, unless the <a href="/refunds">Refund policy</a> says otherwise, so cancel first if you want to keep your plan to the end of the period. Some billing records have to be kept for legal and tax reasons; the Privacy Policy explains which ones and for how long.</p>
+
+<h2 id="security">Security</h2>
+<ul>
+  <li>The extension connects with a device token that you can revoke at any time. Resetting your password disconnects every browser.</li>
+  <li>Traffic between the extension, the website and Starling's servers is encrypted with HTTPS.</li>
+  <li>Found a security problem? Read <a href="/.well-known/security.txt">security.txt</a> or <a href="/contact">contact us</a>.</li>
+</ul>
+{% endblock %}

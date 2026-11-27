@@ -1,0 +1,21 @@
+# Every text file is stored and checked out with LF line endings, whatever Git is configured to do
+# on the machine that commits or exports it (`git archive` converts line endings the way a checkout
+# does). The container image is Linux: a shell script or an entrypoint
+# that arrives with CRLF endings does not run there.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF.
+*.ps1 text eol=crlf
+*.cmd text eol=crlf
+*.bat text eol=crlf
+
+# Never converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.npy binary
+*.zip binary

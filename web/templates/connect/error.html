@@ -1,0 +1,30 @@
+{#- Connect failures (devices/routes.py, CONTRACTS 9).
+    Extra context: error (a message for the person, written by the gateway),
+    extension_id (or null), device_label (or null). -#}
+{% extends "base.html" %}
+{% block title %}Could not connect the extension · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block referrer %}no-referrer{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">Extension</p>
+    <h1>The extension could not be connected</h1>
+    <p class="lead">{{ error }}</p>
+  </header>
+  <h2 id="next-steps">What to do</h2>
+  <ol>
+    <li>Close this window.</li>
+    <li>Open the Starling panel on x.com and choose Sign in again.</li>
+    <li>Approve the new request straight away.</li>
+  </ol>
+  {% if extension_id or device_label %}
+  <dl class="definition-list small">
+    {% if device_label %}<dt>Browser name</dt><dd>{{ device_label }}</dd>{% endif %}
+    {% if extension_id %}<dt>Extension ID</dt><dd class="mono">{{ extension_id }}</dd>{% endif %}
+  </dl>
+  {% endif %}
+  <p>Still stuck? Read <a href="/docs/troubleshooting#sign-in-window">Troubleshooting</a>.</p>
+</div>
+{% endblock %}

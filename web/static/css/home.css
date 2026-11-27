@@ -1,0 +1,617 @@
+/* Starling landing page (templates/index.html). Loaded after tokens.css and site.css.
+
+   Ported from the original Starling landing page: the full-height hero with the huge wordmark,
+   the flowing menu, the pinned "How it works" set-piece with the X-plus-panel mock, the privacy
+   panel, the questions, the closing call to action.
+
+   Rules of the house:
+   - Entrance states exist only under html.js (set by js/boot.js before the first paint), and
+     they give up by themselves after a few seconds if js/home.js never arrives, so the page is
+     never left blank.
+   - The flowing marquee and the pinned scrubbing are opt-in layers: fine pointer, room on
+     screen, motion allowed, and (for the pin) home.js running. Everyone else gets the same
+     content as a plain stacked page.
+   - No style attributes: stagger delays are the classes d1 to d8. */
+
+body.home { font-size: 1.0625rem; }
+.home main { padding-top: 0; }
+.home .site-footer { margin-top: 0; }
+/* A flash message belongs above the page, not over it. The hero fills the screen and is
+   centred in it, so a notice floating on top of it covered the wordmark; in the flow it
+   simply starts the page, clear of the fixed header, and the hero begins under it. */
+.home .flash-region { position: relative; z-index: 40; padding-top: calc(var(--header-h) + 8px); }
+.home .flash-list { margin-top: 0; margin-bottom: var(--space-4); }
+
+/* ---------- reveal on scroll ---------- */
+html.js [data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .9s var(--ease) var(--d, 0s), transform .9s var(--ease) var(--d, 0s);
+}
+html.js [data-reveal].in { opacity: 1; transform: none; }
+.d1 { --d: .08s; }
+.d2 { --d: .16s; }
+.d3 { --d: .24s; }
+.d4 { --d: .32s; }
+.d5 { --d: .4s; }
+.d6 { --d: .48s; }
+.d7 { --d: .56s; }
+.d8 { --d: .64s; }
+
+/* If home.js never runs, nothing stays hidden: everything fades in on its own. home.js sets
+   html.home-live the moment it starts, which switches this off. */
+@keyframes failsafe { to { opacity: 1; transform: none; filter: none; } }
+html.js:not(.home-live) [data-reveal],
+html.js:not(.home-live) .hero .tag,
+html.js:not(.home-live) .hero-mark,
+html.js:not(.home-live) .hero h1,
+html.js:not(.home-live) .hero-lead,
+html.js:not(.home-live) .hero-cta,
+html.js:not(.home-live) .hero-req { animation: failsafe .6s var(--ease) 4s forwards; }
+
+/* ---------- header (landing page) ----------
+   The header is how people sign in or get started, so it is there from the first paint and takes
+   no part in the entrance: nobody should wait for an animation to reach "Sign in". */
+
+/* ---------- hero ---------- */
+.hero {
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(22px, 3.6vh, 40px);
+  padding: var(--header-h) 4vw;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(52% 40% at 50% 46%, rgba(250, 248, 243, .045), transparent 70%);
+}
+.hero > :not(.glint) { position: relative; }
+.hero p, .hero h1 { margin: 0; }
+.hero .tag {
+  font: 600 .74rem/1.5 var(--font-display);
+  letter-spacing: .42em;
+  margin-right: -.42em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  transition: opacity .5s var(--ease) .1s, transform .5s var(--ease) .1s;
+}
+html.js .hero .tag { opacity: 0; transform: translateY(12px); }
+html.js .is-live .hero .tag { opacity: 1; transform: none; }
+.hero-mark {
+  width: min(88vw, 1080px);
+  transition: opacity .75s var(--ease) .04s, transform .75s var(--ease) .04s, filter .75s var(--ease) .04s;
+}
+html.js .hero-mark { opacity: 0; transform: translateY(26px) scale(.985); filter: blur(10px); }
+html.js .is-live .hero-mark { opacity: 1; transform: none; filter: blur(0); }
+.hero-mark img { display: block; width: 100%; height: auto; }
+.hero h1 {
+  font: 600 clamp(1.15rem, 2.4vw, 1.6rem)/1.3 var(--font-display);
+  letter-spacing: .01em;
+  color: var(--text-secondary);
+}
+/* home.js splits the headline into words that rise in one by one; until it has, the line waits */
+html.js .hero h1:not(.is-split) { opacity: 0; }
+.hero h1 .hw {
+  display: inline-block;
+  transition: opacity .5s var(--ease) var(--hd, 0s), transform .5s var(--ease) var(--hd, 0s);
+}
+html.js .hero h1 .hw { opacity: 0; transform: translateY(14px); }
+html.js .is-live .hero h1 .hw { opacity: 1; transform: none; }
+.hero h1 .hw:nth-child(1) { --hd: .08s; }
+.hero h1 .hw:nth-child(2) { --hd: .11s; }
+.hero h1 .hw:nth-child(3) { --hd: .14s; }
+.hero h1 .hw:nth-child(4) { --hd: .17s; }
+.hero h1 .hw:nth-child(5) { --hd: .2s; }
+.hero h1 .hw:nth-child(6) { --hd: .23s; }
+.hero h1 .hw:nth-child(7) { --hd: .26s; }
+.hero h1 .hw:nth-child(n+8) { --hd: .29s; }
+.hero-lead {
+  max-width: 52ch;
+  color: var(--text-muted);
+  font-size: 1rem;
+  transition: opacity .45s var(--ease) .26s, transform .45s var(--ease) .26s;
+}
+html.js .hero-lead { opacity: 0; transform: translateY(14px); }
+html.js .is-live .hero-lead { opacity: 1; transform: none; }
+.hero-cta {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+  transition: opacity .45s var(--ease) .32s, transform .45s var(--ease) .32s;
+}
+html.js .hero-cta { opacity: 0; transform: translateY(14px); }
+html.js .is-live .hero-cta { opacity: 1; transform: none; }
+.hero-req {
+  font-size: .78rem;
+  color: var(--text-faint);
+  letter-spacing: .06em;
+  transition: opacity .4s var(--ease) .42s;
+}
+html.js .hero-req { opacity: 0; }
+html.js .is-live .hero-req { opacity: 1; }
+
+/* the two-line primary button */
+.cta { gap: 13px; text-align: left; }
+.cta-star { width: 19px; height: 19px; fill: currentColor; flex: none; }
+.cta-lab { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.18; }
+.cta-title { font: 600 .98rem/1.18 var(--font-display); letter-spacing: .02em; }
+.cta-sub { font: 400 .66rem/1.35 var(--font-mono); letter-spacing: .04em; color: rgba(0, 0, 0, .64); }
+
+/* twinkling glints */
+.glint { position: absolute; opacity: 0; pointer-events: none; }
+.glint-star { display: block; width: 100%; height: 100%; fill: var(--text-primary); }
+.glint-1 { left: 12%; top: 24%; width: 10px; height: 10px; animation-delay: .8s; }
+.glint-2 { left: 84%; top: 30%; width: 7px; height: 7px; animation-delay: 2.6s; }
+.glint-3 { left: 76%; top: 74%; width: 9px; height: 9px; animation-delay: 4.2s; }
+.glint-4 { left: 18%; top: 70%; width: 6px; height: 6px; animation-delay: 5.4s; }
+@keyframes twinkle { 0%, 100% { opacity: 0; transform: scale(.7); } 50% { opacity: .5; transform: scale(1); } }
+
+/* ---------- small spaced section label ---------- */
+.label {
+  display: block;
+  margin: 0 0 36px;
+  font: 600 .74rem/1.5 var(--font-display);
+  letter-spacing: .42em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ---------- what Starling does: the flowing menu ----------
+   Base layout (touch, small screens, reduced motion): title with its description under it.
+   Enhanced layout below: tall rows, big titles, a cream marquee sliding in on hover or focus. */
+.three { padding: 18vh 0 14vh; }
+.fmenu { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.fm-item { position: relative; overflow: hidden; border-bottom: 1px solid var(--line); }
+.fm-idx {
+  position: absolute;
+  left: clamp(20px, 4.5vw, 54px);
+  top: 50%;
+  transform: translateY(-50%);
+  font: 400 .72rem/1 var(--font-mono);
+  color: var(--deco-faint);
+  z-index: 1;
+  pointer-events: none;
+}
+.fm-link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 26px max(6vw, 56px);
+  text-align: center;
+  text-decoration: none;
+  color: var(--text-primary);
+}
+.fm-link:hover { color: var(--text-primary); }
+.fm-link:focus-visible { outline-offset: -6px; }
+.fm-title { font: 600 1.35rem/1.2 var(--font-display); letter-spacing: .09em; text-transform: uppercase; }
+.fm-desc { font: 400 .88rem/1.55 var(--font-body); color: var(--text-muted); max-width: 36ch; }
+.fm-marquee { display: none; }
+@keyframes fmscroll { to { transform: translateX(-50%); } }
+
+@media (min-width: 901px) and (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .fm-item { height: clamp(140px, 21vh, 212px); }
+  .fm-link { height: 100%; padding: 0 max(6vw, 56px); gap: 10px; }
+  .fm-title { font-size: clamp(1.45rem, 3vh, 2.05rem); white-space: nowrap; }
+  /* The one line that says what the row does stays readable without hovering; the band covers
+     the whole row when the pointer crosses it. */
+  .fm-desc { font-size: .92rem; max-width: 76ch; }
+  .fm-idx { transition: opacity .3s; }
+  .fm-item:hover .fm-idx, .fm-item:focus-within .fm-idx { opacity: 0; }
+  .fm-marquee {
+    display: block;
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background: var(--text-primary);
+    transform: translateY(101%);
+  }
+  .fm-inner { height: 100%; transform: translateY(-101%); }
+  .fm-track { display: flex; align-items: center; height: 100%; width: max-content; animation: fmscroll 17s linear infinite; }
+  .fm-part { display: flex; align-items: center; flex-shrink: 0; }
+  .fm-part span {
+    font: 600 clamp(1.25rem, 2.8vh, 1.85rem)/1.2 var(--font-display);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #000000;
+    padding: 0 1.5vw;
+    white-space: nowrap;
+  }
+  .fm-star { width: 2.4vh; height: 2.4vh; margin: 0 .3vw; fill: #000000; flex: none; }
+  /* without home.js the band simply rises from below; home.js makes it enter and leave by the
+     edge the pointer crossed */
+  html:not(.home-live) .fm-marquee, html:not(.home-live) .fm-inner { transition: transform .6s cubic-bezier(.19, 1, .22, 1); }
+  html:not(.home-live) .fm-item:hover .fm-marquee, html:not(.home-live) .fm-item:focus-within .fm-marquee,
+  html:not(.home-live) .fm-item:hover .fm-inner, html:not(.home-live) .fm-item:focus-within .fm-inner { transform: none; }
+}
+
+/* ---------- how it works ----------
+   Base: a normal stacked section, every step lit, the mock in its finished state.
+   Pinned set-piece (further down): 300vh tall with a sticky inner, steps light up as the page
+   scrolls and home.js scrubs the mock through its four states. */
+.how { position: relative; padding: 14vh 0; }
+.how-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 34px; align-items: center; }
+.how .label { margin-bottom: 26px; }
+.hsteps { list-style: none; margin: 0; padding: 0; }
+.hstep { margin-bottom: 26px; }
+.hstep:last-child { margin-bottom: 0; }
+.hstep h3 {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 0;
+  font: 600 1.35rem/1.25 var(--font-display);
+  letter-spacing: .01em;
+  color: var(--text-primary);
+}
+.hstep-idx { font: 400 .8rem/1 var(--font-mono); color: var(--deco-faint); flex: none; }
+.hstep p { color: var(--text-muted); font-size: .95rem; max-width: 42ch; margin: 6px 0 0; }
+@media (min-width: 901px) {
+  .how-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.45fr); gap: clamp(26px, 4vw, 64px); }
+  .hstep { margin-bottom: 30px; }
+  .hstep h3 { font-size: 1.5rem; }
+  .hstep p { max-width: 40ch; }
+}
+@media (min-width: 901px) and (min-height: 640px) and (prefers-reduced-motion: no-preference) {
+  html.home-live .how { height: 300vh; padding: 0; }
+  html.home-live .how .pin {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    height: 100svh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  /* a waiting step is dimmed, never unreadable: the title keeps 3.6:1 as large text, the
+     paragraph keeps 5:1 */
+  html.home-live .hstep h3 { color: #63666a; transition: color .5s var(--ease); }
+  html.home-live .hstep p { color: var(--text-faint); transition: color .5s var(--ease); }
+  html.home-live .hstep.on h3 { color: var(--text-primary); }
+  html.home-live .hstep.on p { color: var(--text-secondary); }
+}
+
+/* the product mock: anatomy mirrored from the extension itself, X's main column with the
+   Starling panel docked in X's sidebar. An illustration, so it uses X's own colours. */
+.mock {
+  --xt: #e7e9ea; --xm: #71767b; --xl: #2f3336; --xb: #1d9bf0; --xok: #00ba7c; --xbtn: #536471;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  overflow: hidden;
+  background: #050505;
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .04);
+  font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-size: .9rem;
+  line-height: 1.5;
+  color: var(--xt);
+  text-align: left;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.mock p { margin: 0; }
+.mock b { color: inherit; }
+.mock-bar { display: flex; align-items: center; gap: 7px; padding: 11px 14px; border-bottom: 1px solid var(--line); }
+.mock-bar i { width: 9px; height: 9px; border-radius: 50%; background: #232629; }
+.mock-bar span { margin-left: 8px; font: 400 .72rem/1 var(--font-mono); color: var(--deco-faint); }
+.mx { display: flex; align-items: stretch; min-height: 372px; }
+.mx-main { flex: 1.45; min-width: 0; border-right: 1px solid var(--xl); display: flex; flex-direction: column; }
+.mx-side { flex: 1; min-width: 228px; max-width: 262px; padding: 11px; display: flex; flex-direction: column; gap: 7px; }
+/* X's main column */
+.mock-post { display: flex; gap: 12px; padding: 16px 16px 10px; }
+.mock .av { display: block; width: 38px; height: 38px; border-radius: 50%; background: #1b1e21; flex: none; }
+.mock .av.small { width: 30px; height: 30px; }
+.mbody { flex: 1; min-width: 0; }
+.mauthor { display: flex; align-items: center; gap: 8px; margin-bottom: 9px; }
+.mauthor b { display: block; height: 10px; border-radius: 5px; background: #25282c; width: 86px; }
+.mauthor i { display: block; height: 9px; border-radius: 5px; background: #1b1e21; width: 58px; }
+.mauthor s { text-decoration: none; font-size: .76rem; color: var(--xm); }
+.mlines { display: flex; flex-direction: column; gap: 8px; }
+.mlines b { display: block; height: 9px; border-radius: 5px; background: #1f2226; }
+.mlines b:nth-child(1) { width: 96%; }
+.mlines b:nth-child(2) { width: 84%; }
+.mlines b:nth-child(3) { width: 57%; }
+.mact { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.mact > span { width: 14px; height: 14px; border-radius: 50%; background: #1b1e21; }
+/* the per-post controls Starling adds: the paperclip and the four-point star */
+.mact .vf { display: flex; align-items: center; gap: 9px; width: auto; height: auto; border-radius: 0; background: none; color: #8b98a5; }
+.mact .vf svg { width: 13px; height: 13px; display: block; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; }
+.mact .vf .vf-star { stroke: none; fill: currentColor; transition: fill .3s, filter .3s; }
+.mock[data-step="2"] .vf .vf-star { fill: #eff3f4; filter: drop-shadow(0 0 5px rgba(239, 243, 244, .55)); }
+.mock-reply { border-top: 1px solid var(--xl); padding: 12px 16px 14px; margin-top: auto; }
+.mock[data-step="1"] .mock-reply { display: none; }
+.mrow { display: none; align-items: center; gap: 10px; }
+.mock[data-step="2"] .mrow { display: flex; }
+.mph { flex: 1; min-width: 0; color: var(--xm); font-size: .94rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* the composer pill, as the extension draws it: 1px #536471 border, fully rounded, weight 700.
+   Working shows dots, writing gets a green wash, done reads "Reply ready". */
+.spill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 29px;
+  border: 1px solid var(--xbtn);
+  border-radius: 999px;
+  padding: 0 10px;
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: -.1px;
+  color: #eff3f4;
+  white-space: nowrap;
+  flex: none;
+}
+.spill-star { width: 11px; height: 11px; fill: currentColor; flex: none; }
+.spill .dots { display: none; gap: 3px; }
+.spill.working .dots { display: inline-flex; }
+.spill .dots i { width: 4px; height: 4px; border-radius: 50%; background: currentColor; animation: vfdot .72s ease-in-out infinite; }
+.spill .dots i:nth-child(2) { animation-delay: .1s; }
+.spill .dots i:nth-child(3) { animation-delay: .2s; }
+@keyframes vfdot { 0%, 65%, 100% { opacity: .3; transform: translateY(0); } 32% { opacity: 1; transform: translateY(-2px); } }
+.spill.typing { border-color: var(--xok); background: rgba(0, 186, 124, .12); color: #d8fff0; }
+.spill.done { border-color: var(--xok); background: rgba(0, 186, 124, .12); color: #6ee7b7; }
+.mcomposer-wrap { display: none; }
+.mock[data-step="3"] .mcomposer-wrap, .mock[data-step="4"] .mcomposer-wrap { display: block; }
+.mcompose-row { display: flex; gap: 10px; }
+.mcomposer { flex: 1; min-width: 0; padding: 4px 0 12px; font-size: .98rem; color: var(--xt); min-height: 56px; line-height: 1.5; }
+.mock[data-step="3"] .mcomposer .mtype::after { content: "\258D"; color: var(--xt); animation: caret 1s steps(1) infinite; }
+@keyframes caret { 50% { opacity: 0; } }
+.mcompose-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; border-top: 1px solid var(--xl); padding-top: 10px; }
+.mtools { display: flex; gap: 12px; }
+.mtools i { width: 15px; height: 15px; border-radius: 5px; border: 1.6px solid rgba(29, 155, 240, .55); }
+.mtools i:nth-child(3) { border-radius: 50%; }
+.mfootr { display: flex; align-items: center; gap: 10px; }
+.xring { width: 19px; height: 19px; transform: rotate(-90deg); flex: none; }
+.xring .bgc { fill: none; stroke: var(--xl); stroke-width: 2; }
+.xring .fgc { fill: none; stroke: var(--xb); stroke-width: 2; stroke-dasharray: 56.5; stroke-dashoffset: 41.8; }
+.xreply { font-weight: 700; font-size: .88rem; color: #ffffff; background: var(--xb); border-radius: 999px; padding: 7px 17px; opacity: .5; transition: opacity .4s, box-shadow .4s; flex: none; }
+.mock[data-step="4"] .xreply { opacity: 1; box-shadow: 0 0 20px rgba(29, 155, 240, .3); }
+/* the Starling panel in its sidebar placement: 16px radius, 1px #2f3336 border, black */
+.mpanel { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--xl); border-radius: 16px; background: #000000; overflow: hidden; }
+.pbar { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--xl); }
+.pdot { width: 7px; height: 7px; border-radius: 999px; background: var(--xok); box-shadow: 0 0 0 3px rgba(0, 186, 124, .16); flex: none; transition: background-color .3s, box-shadow .3s; }
+.mock.is-connecting .pdot { background: var(--xm); box-shadow: none; }
+.pbar img { height: 14px; width: auto; display: block; }
+.pico { margin-left: auto; display: flex; align-items: center; gap: 10px; color: var(--xm); }
+.pico svg { width: 13px; height: 13px; display: block; fill: currentColor; }
+.pico b { font-weight: 400; font-size: 1rem; line-height: 1; }
+/* context chip: 3px left edge, muted while working, green when done */
+.pchip {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 10px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--xl);
+  border-left: 3px solid var(--xm);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  overflow: hidden;
+}
+.mock[data-step="3"] .pchip, .mock[data-step="4"] .pchip { display: flex; }
+.mock[data-step="4"] .pchip { border-left-color: var(--xok); }
+.mock .pchip .av { width: 24px; height: 24px; }
+.pchip-t { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.pchip-l { display: flex; align-items: center; gap: 5px; font-size: .7rem; font-weight: 700; color: var(--xt); white-space: nowrap; overflow: hidden; }
+.pchip-l b { font-weight: 800; }
+.pchip-x { color: var(--xm); font-size: .7rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pfeed { flex: 1; min-height: 106px; padding: 12px 10px; display: flex; flex-direction: column; gap: 9px; }
+.mock .phint { display: none; margin: auto; color: var(--xm); font-size: .72rem; text-align: center; }
+.mock[data-step="1"] .phint, .mock[data-step="2"] .phint { display: block; }
+/* status card: bubble tail, pulsing dots and the live line, Cancel */
+.pload {
+  display: none;
+  flex-direction: column;
+  align-self: flex-start;
+  width: 100%;
+  border: 1px solid var(--xl);
+  border-radius: 12px;
+  border-bottom-left-radius: 4px;
+  padding: 8px 10px;
+}
+.mock[data-step="3"] .pload { display: flex; }
+.pload-line { display: flex; align-items: flex-start; gap: 7px; font-size: .7rem; font-weight: 600; color: var(--xt); line-height: 1.4; }
+.pload-line #mline { min-width: 0; }
+.pdots { display: inline-flex; align-items: center; gap: 4px; flex: none; margin-top: 4px; }
+.pdots i { width: 5px; height: 5px; border-radius: 50%; background: var(--xm); animation: pdot 1.3s ease-in-out infinite; }
+.pdots i:nth-child(2) { animation-delay: .18s; }
+.pdots i:nth-child(3) { animation-delay: .36s; }
+@keyframes pdot { 0%, 80%, 100% { opacity: .25; transform: scale(.72); } 40% { opacity: 1; transform: scale(1); } }
+.pload-foot { display: flex; align-items: center; gap: 8px; margin-top: 7px; padding-top: 7px; border-top: 1px solid var(--xl); }
+.pload-foot span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--xm); font-size: .64rem; font-weight: 600; }
+.pload-foot b { flex: none; border: 1px solid var(--xbtn); border-radius: 999px; padding: 3px 10px; color: var(--xt); font-size: .68rem; font-weight: 700; }
+/* the settled card: one status line, as the extension shows after a draft lands */
+.pdone { display: none; border: 1px solid var(--xl); border-radius: 12px; border-bottom-left-radius: 4px; padding: 9px 10px; }
+.mock[data-step="4"] .pdone { display: block; }
+.pstatus { font-size: .7rem; font-weight: 600; color: var(--xt); line-height: 1.45; }
+.pcomposer { display: flex; align-items: center; gap: 7px; padding: 9px 10px; }
+.pplus { flex: none; width: 26px; height: 26px; border: 1px solid var(--xbtn); border-radius: 999px; display: grid; place-items: center; color: var(--xt); font-size: .85rem; line-height: 1; }
+.pinput { flex: 1; min-width: 0; border: 1px solid var(--xl); border-radius: 10px; background: #000000; padding: 6px 10px; color: var(--xm); font-size: .72rem; white-space: nowrap; overflow: hidden; }
+.psend { flex: none; width: 26px; height: 26px; border-radius: 999px; background: var(--xt); display: grid; place-items: center; }
+.psend svg { width: 13px; height: 13px; stroke: #000000; stroke-width: 2.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.pfoot { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-top: 1px solid var(--xl); }
+.pfoot span { color: var(--xm); font-size: .62rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.pfa { margin-left: auto; flex: none; display: flex; gap: 8px; }
+.pfa b { color: var(--xm); font-size: .62rem; font-weight: 600; }
+.mock-note { font: 400 .66rem/1.4 var(--font-mono); color: var(--deco-faint); text-align: right; }
+@media (max-width: 760px) {
+  .mx { flex-direction: column; min-height: 0; }
+  .mx-main { border-right: 0; border-bottom: 1px solid var(--xl); }
+  .mx-side { max-width: none; min-width: 0; }
+}
+
+/* ---------- privacy ---------- */
+.privacy { padding: 16vh 0; }
+.privacy-panel {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: clamp(28px, 5vw, 64px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .025), transparent 60%);
+}
+.privacy h2 { font: 700 clamp(2rem, 4.4vw, 3.4rem)/1.12 var(--font-display); letter-spacing: .01em; margin: 0 0 8px; }
+.privacy .lead { color: var(--text-muted); max-width: 58ch; margin: 0 0 34px; font-size: 1.0625rem; }
+.pfacts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 44px; }
+.pfact { display: flex; gap: 14px; align-items: flex-start; }
+.pfact-star { width: 13px; height: 13px; margin-top: 6px; opacity: .8; fill: var(--text-primary); flex: none; }
+.pfact h3 { font: 600 1.02rem/1.4 var(--font-display); letter-spacing: .01em; margin: 0 0 3px; }
+.pfact p { color: var(--text-muted); font-size: .92rem; margin: 0; }
+.privacy .pill-row { margin-top: 32px; }
+
+/* ---------- plans ---------- */
+.plans-sec { padding: 4vh 0 10vh; overflow-x: clip; }
+.plans-sec h2, .faq-sec h2 { font: 700 clamp(1.9rem, 3.6vw, 2.6rem)/1.15 var(--font-display); letter-spacing: .01em; margin: 0 0 12px; }
+.plans-sec .lead { font-size: 1.0625rem; margin: 0 0 8px; }
+.plans-sec .plans { margin-block: 34px 22px; }
+.plan-idx, .step-idx { margin: 0 0 4px; font: 400 .74rem/1.4 var(--font-mono); letter-spacing: .04em; color: var(--text-faint); }
+.plans-note { color: var(--text-muted); font-size: .92rem; max-width: 74ch; margin: 0 0 22px; }
+
+/* ---------- questions ---------- */
+.faq-sec { padding: 8vh 0 4vh; }
+.faq-sec h2 { margin-bottom: 26px; }
+
+/* ---------- get Starling ---------- */
+.get { padding: 10vh 0 16vh; text-align: center; overflow-x: clip; }
+.get h2 { font: 700 clamp(2.1rem, 5vw, 3.8rem)/1.1 var(--font-display); letter-spacing: .01em; margin: 0 0 12px; }
+.get .lead { color: var(--text-muted); max-width: 52ch; margin: 0 auto 34px; font-size: 1.0625rem; }
+.get-note { margin: 14px 0 0; font-size: .78rem; color: var(--text-faint); letter-spacing: .05em; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; margin: 52px 0 0; padding: 0; list-style: none; text-align: left; }
+.step {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 24px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .02), transparent);
+}
+.step-idx { margin-bottom: 10px; }
+.step h3 { font: 600 1.06rem/1.4 var(--font-display); letter-spacing: .01em; margin: 0 0 7px; }
+.step p { color: var(--text-muted); font-size: .9rem; margin: 0; }
+.step code { font-size: .82em; color: var(--text-secondary); background: var(--soft); border: 0; padding: 1px 6px; border-radius: 5px; }
+.get-links { margin-top: 38px; justify-content: center; }
+/* "On your phone": the writing page (/write), under the three extension steps */
+.phone-note { max-width: 44rem; margin: 18px auto 0; text-align: left; }
+.phone-note p + .phone-note-action { margin-top: 16px; }
+
+/* the directional edge glow on cards (home.js feeds --edge-proximity and --cursor-angle) */
+.glow-card {
+  position: relative;
+  isolation: isolate;
+  --edge-proximity: 0; --cursor-angle: 45deg; --edge-sensitivity: 30; --color-sensitivity: 50;
+  --cone-spread: 25; --glow-padding: 34px;
+}
+.glow-card::before, .glow-card > .edge-light {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  transition: opacity .25s ease-out;
+  z-index: -1;
+  pointer-events: none;
+}
+.glow-card:not(:hover)::before, .glow-card:not(:hover) > .edge-light { opacity: 0; transition: opacity .75s ease-in-out; }
+.glow-card::before {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#050505 0 100%) padding-box,
+    radial-gradient(at 80% 55%, #faf8f3 0px, transparent 50%) border-box,
+    radial-gradient(at 8% 6%, #cfccc4 0px, transparent 50%) border-box,
+    radial-gradient(at 41% 38%, #eee9df 0px, transparent 50%) border-box,
+    linear-gradient(#faf8f3 0 100%) border-box;
+  opacity: calc((var(--edge-proximity) - var(--color-sensitivity)) / (100 - var(--color-sensitivity)));
+  -webkit-mask-image: conic-gradient(from var(--cursor-angle) at center,
+    black calc(var(--cone-spread) * 1%),
+    transparent calc((var(--cone-spread) + 15) * 1%),
+    transparent calc((100 - var(--cone-spread) - 15) * 1%),
+    black calc((100 - var(--cone-spread)) * 1%));
+  mask-image: conic-gradient(from var(--cursor-angle) at center,
+    black calc(var(--cone-spread) * 1%),
+    transparent calc((var(--cone-spread) + 15) * 1%),
+    transparent calc((100 - var(--cone-spread) - 15) * 1%),
+    black calc((100 - var(--cone-spread)) * 1%));
+}
+.glow-card > .edge-light {
+  inset: calc(var(--glow-padding) * -1);
+  z-index: 1;
+  -webkit-mask-image: conic-gradient(from var(--cursor-angle) at center, black 2.5%, transparent 10%, transparent 90%, black 97.5%);
+  mask-image: conic-gradient(from var(--cursor-angle) at center, black 2.5%, transparent 10%, transparent 90%, black 97.5%);
+  opacity: calc((var(--edge-proximity) - var(--edge-sensitivity)) / (100 - var(--edge-sensitivity)));
+  mix-blend-mode: plus-lighter;
+}
+.glow-card > .edge-light::before {
+  content: "";
+  position: absolute;
+  inset: var(--glow-padding);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 0 0 1px hsl(45deg 30% 92% / 85%),
+    inset 0 0 6px 0 hsl(45deg 30% 92% / 32%),
+    inset 0 0 18px 0 hsl(45deg 30% 92% / 20%),
+    0 0 3px 0 hsl(45deg 30% 92% / 48%),
+    0 0 8px 0 hsl(45deg 30% 92% / 32%),
+    0 0 20px 1px hsl(45deg 30% 92% / 20%),
+    0 0 45px 2px hsl(45deg 30% 92% / 10%);
+}
+
+/* ---------- small screens ---------- */
+@media (max-width: 900px) {
+  .three { padding: 12vh 0 8vh; }
+  .how { padding: 8vh 0; }
+  .privacy { padding: 8vh 0; }
+  .pfacts { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: minmax(0, 1fr); }
+  .get { padding: 8vh 0 12vh; }
+}
+@media (max-width: 480px) {
+  .hero-cta { flex-direction: column; align-items: stretch; width: 100%; max-width: 340px; }
+  .hero-cta .btn { width: 100%; }
+  .cta { justify-content: center; }
+  .btn-big { padding-inline: 20px; }
+}
+
+/* ---------- motion ---------- */
+@media (prefers-reduced-motion: no-preference) {
+  .glint { animation: twinkle 5.5s ease-in-out infinite; }
+}
+/* Nothing loops off screen or in a background tab. Endless animations spend the visitor's
+   battery for no one, and a page that never settles cannot be screenshotted or measured.
+   home.js marks a section .is-idle while it is out of view and sets html.anim-paused while the
+   tab is hidden; the marquee is stricter still and only runs while its row is showing the band. */
+.fm-track { animation-play-state: paused; }
+.fm-item:hover .fm-track, .fm-item:focus-within .fm-track { animation-play-state: running; }
+html.anim-paused .glint, .is-idle .glint,
+html.anim-paused .fm-track, .is-idle .fm-track,
+html.anim-paused .spill .dots i, .is-idle .spill .dots i,
+html.anim-paused .pdots i, .is-idle .pdots i,
+html.anim-paused .mcomposer .mtype::after, .is-idle .mcomposer .mtype::after {
+  animation-play-state: paused;
+}
+@media (prefers-reduced-motion: reduce) {
+  html.js [data-reveal],
+  html.js .hero .tag, html.js .hero-mark, html.js .hero h1, html.js .hero h1 .hw, html.js .hero-lead,
+  html.js .hero-cta, html.js .hero-req,
+  html.js .home .brand, html.js .home .site-nav, html.js .home .nav-toggle {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+  .glint { opacity: .3; }
+  .spill .dots i, .pdots i { animation: none; opacity: .7; }
+}
+@media (forced-colors: active) {
+  .fm-marquee { display: none; }
+  .glow-card::before, .glow-card > .edge-light { display: none; }
+}
+@media print {
+  .glint, .fm-marquee { display: none; }
+  html.js [data-reveal], html.js .hero * { opacity: 1 !important; transform: none !important; filter: none !important; }
+}

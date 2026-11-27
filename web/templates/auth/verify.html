@@ -1,0 +1,52 @@
+{#- GET/POST /verify-email
+    Extra context: token_valid (bool); token (string, required when token_valid); already_confirmed (bool:
+    the signed-in account's address is confirmed, so an old link needs no new one).
+    GET shows a button so that link scanners cannot verify; POST fields: csrf_token, token. -#}
+{% extends "base.html" %}
+{% block title %}Confirm your email · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block referrer %}no-referrer{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf with context %}
+<div class="narrow">
+  {% if token_valid %}
+  <header class="page-header">
+    <p class="eyebrow">Almost done</p>
+    <h1>Confirm your email address</h1>
+    <p class="lead">One click and your account is ready to draft.</p>
+  </header>
+  <form class="form" method="post" action="/verify-email">
+    {{ csrf() }}
+    <input type="hidden" name="token" value="{{ token }}">
+    <div><button class="btn" type="submit">Confirm email</button></div>
+  </form>
+  {% elif already_confirmed is defined and already_confirmed %}
+  <header class="page-header">
+    <p class="eyebrow">Email address</p>
+    <h1>Your email is already confirmed</h1>
+    <p class="lead">Nothing more to do here. This link was used before, and your account is ready.</p>
+  </header>
+  <div class="button-row">
+    <a class="btn" href="/account">Go to your account</a>
+  </div>
+  {% else %}
+  <header class="page-header">
+    <p class="eyebrow">Email address</p>
+    <h1>This link has expired or was already used</h1>
+    <p class="lead">Confirmation links work once and expire after 24 hours.</p>
+  </header>
+  {% if user %}
+  <div class="button-row">
+    <form method="post" action="/account/verify/resend">
+      {{ csrf() }}
+      <button class="btn" type="submit">Send a new email</button>
+    </form>
+    <a class="btn btn-secondary" href="/account">Go to your account</a>
+  </div>
+  {% else %}
+  <p>If you already confirmed your email, <a href="/login">sign in</a> as usual. Otherwise sign in, and your account page can send a new email.</p>
+  {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

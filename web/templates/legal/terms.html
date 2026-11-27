@@ -1,0 +1,68 @@
+{#- GET /terms  Extra context: subprocessors. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Terms of Service · Starling{% endblock %}
+{% block description %}The terms that apply when you use the Starling website, Chrome extension and hosted service.{% endblock %}
+{% block heading %}Terms of Service{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<h2 id="agreement">1. Agreement</h2>
+<p>These terms are an agreement between you and {{ L.OPERATOR_COMPANY_NAME|placeholders }} ("we", "us"), {{ L.OPERATOR_REGISTERED_ADDRESS|placeholders }}. By creating an account or using Starling you accept these terms, the <a href="/privacy">Privacy Policy</a> and the <a href="/acceptable-use">Acceptable use policy</a>.</p>
+
+<h2 id="service">2. The service</h2>
+<p>Starling is a Chrome extension with a hosted service that drafts replies, quotes, posts and rewrites for X in your own voice, and offers a chat panel and post ideas. Post ideas are drawn from news feeds and web searches about the topics you post about, and cite the pages they come from. Replies, quotes, rewrites and chat work on any post.</p>
+<p>Starling places drafts in X's composer. It never presses Post, likes, follows or sends messages, and it does not run on direct messages. Starling is an independent product and is not affiliated with or endorsed by X Corp.</p>
+
+<h2 id="accounts">3. Eligibility and accounts</h2>
+<ul>
+  <li>You must be at least 18 years old, or the age of majority where you live if that is higher, and able to enter into this agreement.</li>
+  <li>Give accurate account information and keep your password secure. You are responsible for activity on your account and on the browsers you connect.</li>
+  <li>You may not create extra accounts to get more free allowance. We may close accounts created for that purpose.</li>
+</ul>
+
+<h2 id="content">4. Your content</h2>
+<p>You keep ownership of the content you send to Starling and of the drafts it produces for you. You give us permission to host, copy and process that content only as needed to provide, secure and support the service for you, including sending it to our AI provider. You confirm you have the right to send the content you share.</p>
+
+<h2 id="ai-output">5. AI drafts and your responsibility</h2>
+<p>Drafts and answers are produced by AI and can be inaccurate, incomplete, out of date or unsuitable. Review every draft before you use it. You are responsible for what you post and for complying with the law and X's rules. Starling does not provide legal, financial, medical or other professional advice.</p>
+
+<h2 id="x">6. Using Starling with X</h2>
+<p>You must follow X's terms, rules and policies when you use Starling. X can change its website at any time, which may stop some features working until Starling is updated. We are not responsible for actions X takes on your X account.</p>
+
+<h2 id="billing">7. Plans, billing and renewal</h2>
+<ul>
+  <li>Plans, prices and monthly allowances are shown on the <a href="/pricing">Pricing page</a>. Paid plans are billed in advance each month through Stripe and renew automatically until you cancel.</li>
+  <li>A draft is used when Starling returns a draft or an answer, or when you stop one after its text has started to appear. Requests that fail, even partway through, requests cancelled before anything is shown, and drafts Starling holds back after its own checks are not charged. Allowances reset monthly. There are no overage charges.</li>
+  <li>Upgrades apply once the prorated charge is paid. Downgrades take effect at the end of the current period. If you cancel, you keep your paid plan until the end of the period you have paid for, then your account moves to Free.</li>
+  <li>If a payment fails, you keep paid access for a short grace period; if the payment is not fixed, your account moves to Free. While a payment dispute is open, paid features are paused.</li>
+  <li>We may change prices with reasonable advance notice. A new price applies from your next billing period after the notice.</li>
+  <li>Taxes may apply depending on where you live.</li>
+</ul>
+
+<h2 id="refunds">8. Refunds</h2>
+<p>Refunds are covered by the <a href="/refunds">Refund policy</a>.</p>
+
+<h2 id="limits">9. Limits and availability</h2>
+<p>Plans include rate limits and a fair-use limit on AI processing cost. We may pause drafting for everyone during maintenance or when service capacity is used up. We work to keep Starling available but do not promise that it will be uninterrupted or error-free, and we may change or remove features.</p>
+
+<h2 id="termination">10. Suspension and termination</h2>
+<p>You can stop using Starling and delete your account at any time from <a href="/account/data">Your data</a>. We may suspend or close accounts that break these terms or the Acceptable use policy, or where the law requires it. Where appropriate, we will tell you why.</p>
+
+<h2 id="disclaimers">11. Disclaimers</h2>
+<p>To the extent the law allows, Starling is provided "as is" and "as available", without warranties of any kind, including warranties of merchantability, fitness for a particular purpose and non-infringement.</p>
+
+<h2 id="liability">12. Limitation of liability</h2>
+<p>To the extent the law allows, we are not liable for indirect, incidental, special or consequential losses, or for loss of profits, data or reputation, and our total liability for any claim relating to Starling is limited to the amount you paid us in the 12 months before the claim. Nothing in these terms limits liability that cannot be limited by law.</p>
+
+<h2 id="indemnity">13. Indemnity</h2>
+<p>If a third party brings a claim against us because of content you posted or your breach of these terms, you agree to cover the reasonable costs of that claim, to the extent the law allows.</p>
+
+<h2 id="law">14. Governing law and disputes</h2>
+<p>These terms are governed by the laws of {{ L.OPERATOR_JURISDICTION|placeholders }}. Disputes will be handled in {{ L.OPERATOR_GOVERNING_LAW_VENUE|placeholders }}, unless the law where you live gives you the right to bring a claim elsewhere.</p>
+
+<h2 id="changes">15. Changes to these terms</h2>
+<p>We may update these terms. We will post the new version here with a new effective date, and tell you by email or in the extension before significant changes take effect. If you keep using Starling after that, the new terms apply.</p>
+
+<h2 id="contact">16. Contact</h2>
+<p>{{ L.OPERATOR_COMPANY_NAME|placeholders }}, {{ L.OPERATOR_REGISTERED_ADDRESS|placeholders }}. Email: {{ legal_email(L.OPERATOR_CONTACT_EMAIL) }}.</p>
+{% endblock %}

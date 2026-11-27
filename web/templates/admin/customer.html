@@ -1,0 +1,132 @@
+{#- GET /admin/customers/{id}. Metadata, usage, cost and error codes only: never prompts, drafts or samples.
+    Extra context: admin; errors (dict; the routes report form problems as flash messages, so it stays empty);
+      customer {id, email, tenant_seq, created_at, email_verified, account_status, is_admin, is_self, dispute_open,
+                stripe_customer_id or null, devices_active,
+                subscription {id, status, plan_name, current_period_end or null, cancel_at or null} or null};
+      state (CONTRACTS 6.2 for this customer, from usage.service.account_state);
+      cost {period_cost_micros, ceiling_micros, ai_calls, released_with_spend};
+      recent_errors [{at, code, route, count}] (last 7 days); ledger [{created_at, kind, amount, actor, reason}].
+    POST (csrf_token, elevation required), each answered 303 back here with a flash message:
+      /admin/customers/{id}/grant (credits, reason), /suspend or /unsuspend (suspend_reason), /revoke-devices,
+      /resync-billing (resync_confirm=yes). Suspending and disconnecting are not offered on the owner's own account. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Customer · Owner dashboard · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, input_field, checkbox_field, usage_meter, budget_meter with context %}
+{% set c = customer %}
+<h1>Customer</h1>
+<p class="lead mono">{{ c.email }}</p>
+
+<section class="panel" aria-labelledby="meta-title">
+  <h2 id="meta-title">Account</h2>
+  <dl class="definition-list">
+    <dt>Account ID</dt><dd class="mono">{{ c.id }}</dd>
+    <dt>Tenant number</dt><dd>{{ c.tenant_seq }}</dd>
+    <dt>Created</dt><dd>{{ c.created_at|datetime }}</dd>
+    <dt>Email verified</dt><dd>{{ "Yes" if c.email_verified else "No" }}</dd>
+    <dt>Account status</dt><dd>{{ c.account_status }}{% if c.dispute_open %} (open payment dispute){% endif %}</dd>
+    <dt>Owner access</dt><dd>{{ "Yes" if c.is_admin else "No" }}{% if c.is_self %} (your account){% endif %}</dd>
+    <dt>Connected browsers</dt><dd>{{ c.devices_active|number }}</dd>
+    <dt>Stripe customer</dt><dd class="mono">{{ c.stripe_customer_id if c.stripe_customer_id else "None" }}</dd>
+    {% if c.subscription %}
+    <dt>Subscription</dt><dd><span class="mono">{{ c.subscription.id }}</span>: {{ c.subscription.plan_name }}, {{ c.subscription.status }}{% if c.subscription.current_period_end %}, period ends {{ c.subscription.current_period_end|date }} UTC{% endif %}{% if c.subscription.cancel_at %}, cancels {{ c.subscription.cancel_at|date }} UTC{% endif %}</dd>
+    {% endif %}
+  </dl>
+</section>
+
+<section class="panel" aria-labelledby="usage-title">
+  <h2 id="usage-title">Usage and cost this period</h2>
+  <p>{{ state.plan.name }} ({{ state.plan.status }}), resets {{ state.usage.resets_at|date }} UTC.</p>
+  {{ usage_meter(state.usage, id="customer-usage") }}
+  <div class="meter">
+    <p class="meter-label" id="customer-cost"><span>AI cost against the plan's fair-use ceiling</span><span>{{ cost.period_cost_micros|usd_micros }} of {{ cost.ceiling_micros|usd_micros }}</span></p>
+    {{ budget_meter("customer-cost", cost.period_cost_micros, cost.ceiling_micros) }}
+  </div>
+  <p class="small muted">{{ cost.ai_calls|number }} AI calls this period; {{ cost.released_with_spend|number }} released requests with spend.</p>
+</section>
+
+<section class="panel" aria-labelledby="errors-title">
+  <h2 id="errors-title">Recent errors</h2>
+  {% if recent_errors %}
+  <div class="table-wrap" role="region" aria-label="Recent errors for this customer" tabindex="0">
+    <table>
+      <thead><tr><th scope="col" class="when">Last seen</th><th scope="col">Code</th><th scope="col">Route</th><th scope="col" class="num">Count</th></tr></thead>
+      <tbody>
+      {% for e in recent_errors %}<tr><td class="when">{{ e.at|datetime }}</td><td class="mono">{{ e.code }}</td><td class="mono">{{ e.route }}</td><td class="num">{{ e.count|number }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><p class="empty-title">No errors recorded in the last 7 days</p></div>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="ledger-title">
+  <h2 id="ledger-title">Credit adjustments</h2>
+  {% if ledger %}
+  <div class="table-wrap" role="region" aria-label="Credit ledger adjustments" tabindex="0">
+    <table>
+      <thead><tr><th scope="col" class="when">When</th><th scope="col">Kind</th><th scope="col" class="num">Amount</th><th scope="col">By</th><th scope="col">Reason</th></tr></thead>
+      <tbody>
+      {% for row in ledger %}<tr><td class="when">{{ row.created_at|datetime }}</td><td>{{ row.kind }}</td><td class="num">{{ row.amount }}</td><td>{{ row.actor }}</td><td>{{ row.reason }}</td></tr>{% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><p class="empty-title">No manual adjustments</p></div>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="actions-title">
+  <h2 id="actions-title">Actions</h2>
+  <h3 id="grant-title">Grant credits</h3>
+  <form class="form" method="post" action="/admin/customers/{{ c.id }}/grant" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["credits", "reason"], general="grant") }}
+    {{ input_field("credits", "Credits to add this period", autocomplete="off", errors=errors, inputmode="numeric", maxlength="5") }}
+    {{ input_field("reason", "Reason (kept in the audit log)", autocomplete="off", errors=errors, maxlength="200") }}
+    <div><button class="btn" type="submit">Grant credits</button></div>
+  </form>
+
+  {% if c.is_self %}
+  <h3 id="access-title">Suspension and browsers</h3>
+  <p class="muted">This is your own account. Suspending it or disconnecting its browsers is not offered here.</p>
+  {% else %}
+  {% if c.account_status == "active" %}
+  <h3 id="suspend-title">Suspend account</h3>
+  <p class="small muted">Suspension signs the customer out of the website and every connected browser, and refuses drafting until you lift it.</p>
+  <form class="form" method="post" action="/admin/customers/{{ c.id }}/suspend" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["suspend_reason"], general="suspend") }}
+    {{ input_field("suspend_reason", "Reason (kept in the audit log)", autocomplete="off", errors=errors, maxlength="200") }}
+    <div><button class="btn btn-danger" type="submit">Suspend account</button></div>
+  </form>
+  {% elif c.account_status == "suspended" %}
+  <h3 id="suspend-title">Lift suspension</h3>
+  {% if c.dispute_open %}
+  <p class="small muted">An open payment dispute also blocks drafting. Lifting this suspension does not change that; it ends when the dispute closes in your favour.</p>
+  {% endif %}
+  <form class="form" method="post" action="/admin/customers/{{ c.id }}/unsuspend" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["suspend_reason"], general="suspend") }}
+    {{ input_field("suspend_reason", "Reason (kept in the audit log)", autocomplete="off", errors=errors, maxlength="200") }}
+    <div><button class="btn btn-secondary" type="submit">Lift suspension</button></div>
+  </form>
+  {% endif %}
+  <h3 id="devices-title">Connected browsers</h3>
+  <form method="post" action="/admin/customers/{{ c.id }}/revoke-devices">
+    {{ csrf() }}
+    <div class="button-row"><button class="btn btn-secondary" type="submit">Disconnect all browsers</button></div>
+  </form>
+  {% endif %}
+
+  <h3 id="billing-title">Billing</h3>
+  <p class="small muted">Fetches this customer's subscriptions from Stripe and repairs the local copy, including paid periods whose webhooks were missed. If the customer has more than one paid subscription, the extra ones are canceled in Stripe and the highest plan is kept.</p>
+  <form class="form" method="post" action="/admin/customers/{{ c.id }}/resync-billing">
+    {{ csrf() }}
+    {{ error_summary(errors, ["resync_confirm"], general="resync") }}
+    {% call checkbox_field("resync_confirm", errors=errors) %}I understand that a resync can cancel duplicate subscriptions in Stripe{% endcall %}
+    <div><button class="btn btn-secondary" type="submit">Resync billing from Stripe</button></div>
+  </form>
+</section>
+{% endblock %}

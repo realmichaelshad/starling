@@ -1,0 +1,28 @@
+{#- Legal pages. site.legal is the gateway's LegalDetails (company_name, registered_address, ...);
+    legal_values(site.legal) re-keys it by marker name and fills fields the gateway does not send
+    with their markers. Render every value through the `placeholders` filter so a missing value is
+    visible. Production refuses to start while LegalDetails still holds placeholders (CONTRACTS 10). -#}
+{% extends "base.html" %}
+{% block banner %}
+{% if site.env != "production" %}
+<div class="draft-banner" role="note" aria-label="Draft legal text">
+  <div class="wrap">
+    <p><strong>Draft legal text: the operator must complete it and have counsel review it.</strong> Highlighted markers still need real values before launch.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+{% block main %}
+<div class="wrap">
+  <article class="prose legal">
+    <header class="page-header">
+      <p class="eyebrow">{% block eyebrow %}Legal{% endblock %}</p>
+      <h1>{% block heading %}{% endblock %}</h1>
+      {% block effective %}
+      <p class="muted">Effective date: {{ legal_values(site.legal).OPERATOR_EFFECTIVE_DATE|placeholders }}</p>
+      {% endblock %}
+    </header>
+    {% block content %}{% endblock %}
+  </article>
+</div>
+{% endblock %}

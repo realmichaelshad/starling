@@ -1,0 +1,15 @@
+fastapi>=0.111,<1
+uvicorn[standard]>=0.30,<1
+pydantic>=2.7,<3
+# The services client (app/cloud.py). Every AI call and all web data go through
+# the services process, over a unix socket or loopback HTTP.
+httpx>=0.28,<1
+scikit-learn>=1.5,<2
+numpy>=1.26,<3
+pillow>=12.3.0,<13
+
+# The tz database itself. `zoneinfo` is stdlib but ships NO data on Windows --
+# `zoneinfo.TZPATH` is empty there -- so without this package every ZoneInfo()
+# call raises ZoneInfoNotFoundError, including ZoneInfo("UTC"). Slim container
+# images can lack /usr/share/zoneinfo for the same reason.
+tzdata>=2025.1

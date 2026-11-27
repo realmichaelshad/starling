@@ -1,0 +1,29 @@
+{#- GET /offline  No extra context. The page the service worker (static/js/sw.js) keeps and shows when
+    a page cannot load because the phone is offline. It is a document of its own, not base.html:
+    the saved copy must hold nothing about the person (no address, no sign-out form, no token). -#}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>You're offline · Starling</title>
+<meta name="description" content="Starling needs a connection to write drafts.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/png" sizes="32x32" href="{{ static('img/starling-icon-32.png') }}">
+<link rel="stylesheet" href="{{ static('css/tokens.css') }}">
+<link rel="stylesheet" href="{{ static('css/site.css') }}">
+<link rel="stylesheet" href="{{ static('css/write.css') }}">
+</head>
+<body class="single offline-page">
+<a class="skip-link" href="#main">Skip to content</a>
+<main id="main" tabindex="-1">
+  <div class="narrow">
+    <h1>You're offline</h1>
+    <p>Starling needs a connection to write drafts. Check your signal or Wi-Fi, then try again.</p>
+    <p><a class="btn btn-big" href="/write">Try again</a></p>
+  </div>
+</main>
+</body>
+</html>

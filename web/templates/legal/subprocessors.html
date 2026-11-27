@@ -1,0 +1,36 @@
+{#- GET /subprocessors
+    Extra context: subprocessors = list of {name, purpose} (web/render.py subprocessors_context);
+    optional data and location keys add two columns when every row has them. Values may be
+    placeholder markers and are rendered with `placeholders`. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Subprocessors · Starling{% endblock %}
+{% block description %}The service providers that process personal information for Starling, and what they do.{% endblock %}
+{% block heading %}Subprocessors{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<p>{{ L.OPERATOR_COMPANY_NAME|placeholders }} uses the service providers below to run Starling. Each one processes personal information only to provide its service to us, under an agreement that limits its use of the data.</p>
+{% if subprocessors %}
+{% set detailed = (subprocessors|selectattr("data", "defined")|selectattr("location", "defined")|list|length) == (subprocessors|length) %}
+<div class="table-wrap" role="region" aria-label="Subprocessors" tabindex="0">
+  <table>
+    <thead>
+      <tr><th scope="col">Provider</th><th scope="col">Purpose</th>{% if detailed %}<th scope="col">Data processed</th><th scope="col">Location</th>{% endif %}</tr>
+    </thead>
+    <tbody>
+    {% for sp in subprocessors %}
+      <tr>
+        <th scope="row">{{ sp.name|placeholders }}</th>
+        <td>{{ sp.purpose|placeholders }}</td>
+        {% if detailed %}<td>{{ sp.data|placeholders }}</td><td>{{ sp.location|placeholders }}</td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty"><p class="empty-title">No subprocessors are listed yet</p></div>
+{% endif %}
+<h2 id="changes">Changes to this list</h2>
+<p>We update this page when our providers change. Questions about subprocessors can go to {{ legal_email(L.OPERATOR_PRIVACY_CONTACT) }}.</p>
+{% endblock %}

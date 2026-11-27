@@ -1,0 +1,39 @@
+{#- GET /admin/audit?page=
+    Extra context: admin, page {number, has_prev, has_next},
+    entries [{created_at, admin_email, action, target_account_id or null, params_summary, ip_prefix}]. -#}
+{% extends "_admin_layout.html" %}
+{% block title %}Audit log · Owner dashboard · Starling{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="muted">Every owner action, newest first.</p>
+{% if entries %}
+<div class="table-wrap" role="region" aria-label="Audit log entries" tabindex="0">
+  <table>
+    <thead><tr><th scope="col" class="when">When</th><th scope="col">Owner</th><th scope="col">Action</th><th scope="col">Customer</th><th scope="col">Details</th><th scope="col">Network</th></tr></thead>
+    <tbody>
+    {% for a in entries %}
+      <tr>
+        <td class="when">{{ a.created_at|datetime }}</td>
+        <td>{{ a.admin_email }}</td>
+        <td class="mono">{{ a.action }}</td>
+        <td>{% if a.target_account_id %}<a class="mono" href="/admin/customers/{{ a.target_account_id }}">{{ a.target_account_id|short_id }}</a>{% else %}None{% endif %}</td>
+        <td>{{ a.params_summary }}</td>
+        <td class="mono">{{ a.ip_prefix }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty">
+  <p class="empty-title">No owner actions recorded yet</p>
+  <p>Granting credits, suspending an account, disconnecting browsers and resyncing billing are all written here.</p>
+</div>
+{% endif %}
+{% if page.has_prev or page.has_next %}
+<nav class="pager" aria-label="Audit log pages">
+  {% if page.has_prev %}<a href="/admin/audit?page={{ page.number - 1 }}">Newer entries</a>{% else %}<span></span>{% endif %}
+  {% if page.has_next %}<a href="/admin/audit?page={{ page.number + 1 }}">Older entries</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

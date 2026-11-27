@@ -1,0 +1,90 @@
+{#- GET /verify-email/sent (auth/routes.py), and the page POST /verify-email/code re-renders on a wrong code.
+    Extra context: email_masked (string or null); email (the address in full, or null: the one this browser
+    just typed at sign-up, or the signed-in account's); code_form (bool: this browser can finish with the
+    6-digit code from the email); confirmed (bool: the address is confirmed already, by its link opened in
+    another browser, or, signed in, at any time: POST /verify-email/continue carries on); mail_link (null or
+    {label, url}: the webmail for the address's domain); errors (dict; field "code").
+    POST /verify-email/code fields: csrf_token, code. POST /verify-email/resend and POST /verify-email/continue:
+    csrf_token. While the code form shows, site.js asks GET /verify-email/status every few seconds and sends
+    the continue form as soon as it answers {"state": "confirmed"}; signed out, a page rendered confirmed
+    sends it straight away. -#}
+{% extends "base.html" %}
+{% block title %}{% if confirmed %}Email confirmed{% else %}Check your email{% endif %} · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block nav_cta %}{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, error_summary with context %}
+{% set shown = email or email_masked %}
+{% if confirmed %}
+<div class="narrow" data-verify-poll{% if not user %} data-verify-auto{% endif %}>
+  <header class="page-header">
+    {% if not user %}<p class="eyebrow">Step 2 of 3</p>{% endif %}
+    <h1>Your email is confirmed</h1>
+    {% if user %}
+    <p class="lead">{% if shown %}<strong class="address">{{ shown }}</strong> is confirmed. {% endif %}There is nothing more to do here.</p>
+    {% else %}
+    <p class="lead">You confirmed it in another browser. Continue to sign in here.</p>
+    {% endif %}
+  </header>
+  <form class="form" method="post" action="/verify-email/continue" data-verify-continue>
+    {{ csrf() }}
+    <div><button class="btn" type="submit">Continue</button></div>
+  </form>
+</div>
+{% else %}
+<div class="narrow"{% if code_form %} data-verify-poll data-status-url="/verify-email/status"{% endif %}>
+  <header class="page-header">
+    <p class="eyebrow">Step 2 of 3</p>
+    <h1>Check your email</h1>
+    {% if code_form %}
+    <p class="lead">We sent a 6-digit code to {% if shown %}<strong class="address">{{ shown }}</strong>{% else %}your email address{% endif %}. Enter it below, or open the link in that email.</p>
+    {% else %}
+    <p class="lead">We sent a confirmation link to {% if shown %}<strong class="address">{{ shown }}</strong>{% else %}the email address you signed up with{% endif %}. Open it to confirm your account.</p>
+    {% endif %}
+  </header>
+  {% if code_form %}
+  <form class="form code-form" method="post" action="/verify-email/code" novalidate data-code-form>
+    {{ csrf() }}
+    {{ error_summary(errors, ["code"]) }}
+    <div class="field">
+      <label for="field-code">Confirmation code</label>
+      {% if errors and errors.code is defined %}
+      <p class="field-error" id="field-code-error"><span class="visually-hidden">Error: </span>{{ errors.code }}</p>
+      {% endif %}
+      <input class="code-input" id="field-code" name="code" type="text" inputmode="numeric" autocomplete="one-time-code"
+        maxlength="7" pattern="[0-9 ]*" spellcheck="false" autocapitalize="none" autofocus required aria-required="true"
+        aria-describedby="field-code-hint{% if errors and errors.code is defined %} field-code-error{% endif %}"
+        {%- if errors and errors.code is defined %} aria-invalid="true"{% endif %}>
+      <p class="hint" id="field-code-hint">The code and the link work for 24 hours. The email can take a minute to arrive.</p>
+    </div>
+    <div><button class="btn" type="submit">Confirm</button></div>
+    <p class="hint" data-verify-hint aria-live="polite" hidden>Reading the email on your phone? Confirm it there and this page continues by itself.</p>
+  </form>
+  <form method="post" action="/verify-email/continue" data-verify-continue hidden>
+    {{ csrf() }}
+  </form>
+  {% endif %}
+  <div class="button-row">
+    {% if mail_link %}
+    <a class="btn btn-secondary" href="{{ mail_link.url }}" target="_blank" rel="noopener">{{ mail_link.label }}</a>
+    {% endif %}
+    {% if code_form or user %}
+    <form method="post" action="/verify-email/resend" data-resend-form>
+      {{ csrf() }}
+      <button class="link-button" type="submit" data-resend-button>Send the email again</button>
+    </form>
+    {% endif %}
+  </div>
+  <p class="muted small">No email? Check your spam or promotions folder. It comes from Starling.</p>
+  {% if code_form and not user %}
+  <p class="form-footer small">Wrong address? <a href="/signup">Start again</a></p>
+  {% elif not code_form and not user %}
+  <p class="form-footer small"><a href="/login">Sign in</a> if you have already confirmed your email.</p>
+  {% endif %}
+  {% if user %}
+  <p class="form-footer small"><a href="/account">Go to your account</a></p>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

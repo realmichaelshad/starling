@@ -1,0 +1,22 @@
+{#- Not found. Base context only. -#}
+{% extends "base.html" %}
+{% block title %}Page not found · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">Error 404</p>
+    <h1>We cannot find that page</h1>
+    <p class="lead">The link may be out of date, or the address may have a typo.</p>
+  </header>
+  <p>Try one of these instead.</p>
+  <ul class="pill-row">
+    {% if user %}<li><a class="pill" href="/account">Your account</a></li>{% endif %}
+    <li><a class="pill" href="/">Home</a></li>
+    <li><a class="pill" href="/docs/getting-started">Documentation</a></li>
+    <li><a class="pill" href="/pricing">Pricing</a></li>
+    <li><a class="pill" href="/contact">Contact</a></li>
+  </ul>
+</div>
+{% endblock %}

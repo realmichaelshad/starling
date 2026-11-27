@@ -1,0 +1,112 @@
+{#- GET /privacy  Extra context: subprocessors. Every site.legal value goes through `placeholders`. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Privacy Policy · Starling{% endblock %}
+{% block description %}How Starling collects, uses, shares and protects personal information, and the choices you have.{% endblock %}
+{% block heading %}Privacy Policy{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<h2 id="who">Who we are</h2>
+<p>Starling is operated by {{ L.OPERATOR_COMPANY_NAME|placeholders }} ("we", "us"), {{ L.OPERATOR_REGISTERED_ADDRESS|placeholders }}. For questions about this policy or your personal information, contact {{ legal_email(L.OPERATOR_PRIVACY_CONTACT) }}.</p>
+<p>This policy covers the Starling website, the Starling Chrome extension and the hosted service behind them. Starling is an independent product and is not affiliated with or endorsed by X Corp. X's own privacy policy governs what X does with your data.</p>
+
+<h2 id="collect">Information we collect</h2>
+<h3 id="collect-account">Account information</h3>
+<p>Your email address, a salted hash of your password, whether your email is verified, your plan, and the browsers you connect (the name you approved, extension version and when each was last used).</p>
+{% if site.google_sign_in is defined and site.google_sign_in %}
+<h3 id="collect-google">If you sign in with Google</h3>
+<p>If you choose Continue with Google, Google tells us your email address, whether Google has confirmed it, the ID of your Google account and, for a Google Workspace account, its domain. We ask Google for nothing else: not your name, contacts, files or anything in your Google account, and we never see your Google password. An account made with Google has no Starling password unless you add one.</p>
+{% endif %}
+<h3 id="collect-content">Content you send for drafting</h3>
+<p>With your consent in the extension, when you ask for a draft or an answer, the extension sends: the post you ask about, the text in X's composer, attached images as small copies, your messages in the Starling panel, the writing samples you add (including posts of your own that you add from your X profile), preferences you confirm and the outcomes of drafts (whether you used, edited or discarded them).</p>
+<p>With each request the extension also sends the web address of that post, of the post it replies to and of the X page you are on, so the draft fits the conversation. The extension runs only on x.com and twitter.com and reads no other browsing.</p>
+<p>With your consent on the website's writing page (the page for phones, at /write), when you ask for a draft we receive what you paste or type there: the post you are answering, with its author and its link if you give them, what a new post should be about, and the writing samples you add. If you give a link to a post on X, our server asks X's public embed service for that post's words and author; X receives the link and our server's address, not your account details. A post shared to the installed app from another app arrives the same way, and nothing is sent until you press a button.</p>
+<h3 id="collect-optional">Optional learning data</h3>
+<p>Only if you turn on the optional learning choice, the extension sends your own X profile details and post statistics while you browse X.</p>
+<h3 id="collect-billing">Billing information</h3>
+<p>If you subscribe, Stripe collects your payment details directly. We receive and keep your Stripe customer reference, subscription status, invoice records and the last details Stripe shares with us, but never your full card number.</p>
+<h3 id="collect-technical">Usage and technical information</h3>
+<p>When requests happened, whether they succeeded, how much of your allowance they used, the AI processing cost, your time zone, a shortened form of your IP address and your browser's user agent for sessions and security. Usage records do not contain the text of your messages or drafts, and service logs never contain messages, drafts, passwords or tokens.</p>
+<h3 id="collect-support">Messages to us</h3>
+<p>If you contact support, we keep the messages and details you give us.</p>
+
+<h2 id="use">How we use information</h2>
+<ul>
+  <li>To provide Starling: generating drafts and answers, matching your voice and showing your usage.</li>
+  <li>To run your account and subscription, apply plan allowances, rate limits and fair-use limits.</li>
+  <li>To keep the service secure and prevent abuse, including limiting free allowances to one per person.</li>
+  <li>To send service emails such as email verification, password resets and important billing or policy notices.</li>
+  <li>To meet legal, tax and accounting obligations.</li>
+</ul>
+<p>We do not sell your personal information and do not use it for advertising.</p>
+<p>Starling's use of information received from the Starling Chrome extension complies with the Chrome Web Store User Data Policy, including the Limited Use requirements.</p>
+
+<h2 id="bases">Legal bases</h2>
+<p>Where the law requires a legal basis, we rely on: performing our contract with you (providing the service and billing), your consent (sending content for drafting and the optional learning data, which you can withdraw at any time), our legitimate interests (security, abuse prevention and improving the service in ways you would expect) and legal obligations (tax and accounting records). Jurisdiction-specific terms: {{ L.OPERATOR_JURISDICTION|placeholders }}.</p>
+
+<h2 id="ai">AI processing</h2>
+<p>Content you send for drafting is processed by our AI provider, {{ L.AI_SUBPROCESSORS|placeholders }}, to generate drafts and answers. AI output can be inaccurate. You decide what, if anything, to post.</p>
+<p>To check facts, Starling may read the public web pages that the post you ask about links to{% if site.web_search is defined and site.web_search %}, and, when that post makes a claim about recent events, send a short search built from the public post to {{ L.AI_SUBPROCESSORS|placeholders }}'s web search{% endif %}.</p>
+<p>To suggest what to post about, Starling works out the subjects you write about from your own posts and writing samples, and looks for what is new in them in public news feeds{% if site.web_search is defined and site.web_search %} and with {{ L.AI_SUBPROCESSORS|placeholders }}'s web search, which receives only those subject names (for example "strength training for beginners"): on paid plans in the background, without you pressing anything, and otherwise when you ask for a post idea{% endif %}. The pages it used are shown with each idea.</p>
+<p>Searches never contain the text of your messages, your drafts, your writing samples or posts from protected accounts.</p>
+
+<h2 id="sharing">How we share information</h2>
+<p>We share personal information only with service providers that help us run Starling, under agreements that limit their use of it, and when the law requires it:</p>
+<ul>
+  <li>hosting of our servers and databases: {{ L.HOSTING_PROVIDER|placeholders }}</li>
+  <li>account and service email delivery: {{ L.EMAIL_PROVIDER|placeholders }}</li>
+  <li>payments: Stripe</li>
+  <li>AI processing: {{ L.AI_SUBPROCESSORS|placeholders }}</li>
+  {% if site.google_sign_in is defined and site.google_sign_in %}
+  <li>sign-in with Google, only if you choose it: Google, which confirms who you are to us under its own privacy policy</li>
+  {% endif %}
+</ul>
+<p>The current list, with what each provider processes, is on the <a href="/subprocessors">Subprocessors page</a>. If {{ L.OPERATOR_COMPANY_NAME|placeholders }} is involved in a merger, acquisition or sale of assets, personal information may transfer as part of that transaction, subject to this policy.</p>
+
+<h2 id="transfers">International transfers</h2>
+<p>Our providers may process information outside the country where you live. Where required, we use appropriate safeguards for these transfers. Details for your region: {{ L.OPERATOR_JURISDICTION|placeholders }}.</p>
+
+<h2 id="retention">How long we keep information</h2>
+<ul>
+  <li>A finished draft is kept for 15 minutes so the extension or the writing page can recover it after a dropped connection.</li>
+  <li>Writing samples, preferences, draft outcomes and optional stats are kept until you remove them or delete your account.</li>
+  <li>Encrypted backups of the service are taken every night and kept for up to about three months. Information you delete, and a deleted account, leave the live service at once and leave the backups as those backups age out. A backup is only ever used to restore the service after a failure.</li>
+  <li>Other retention periods: {{ L.RETENTION_PERIODS|placeholders }}</li>
+</ul>
+
+<h2 id="cookies">Cookies</h2>
+<p>The website uses only cookies it needs to work, and no analytics, advertising or third-party cookies:</p>
+<ul>
+  <li>a sign-in cookie, which keeps you signed in; it ends when you sign out, or after 14 days without use and 30 days at most;</li>
+  <li>a security cookie, set before you sign in, which protects the sign-in and sign-up forms against forged requests;</li>
+  <li>a short-lived message cookie, which carries a one-line notice (such as "You are signed out") to the next page and is then removed;</li>
+  <li>a cookie set when you sign up, for up to 24 hours, which holds the address you typed and a random value, so the "check your email" page can show that address and so the code or link we email you signs in this browser and no other;</li>
+  {% if site.google_sign_in is defined and site.google_sign_in %}
+  <li>two short-lived cookies used only while you sign in with Google, for up to 10 minutes: they tie Google's answer to this browser so that nobody else can finish your sign-in.</li>
+  {% endif %}
+</ul>
+<p>The browser extension uses no cookies. It keeps its sign-in and your settings in the browser's extension storage.</p>
+<p>The writing page keeps two things in your own browser and never sends them to us: whether you last chose Reply, Quote or New post, and, if you add the page to your home screen, a copy of the "You're offline" page to show when you have no connection.</p>
+
+<h2 id="rights">Your rights and choices</h2>
+<ul>
+  <li><strong>Access and export:</strong> download a copy of your data from <a href="/account/data">Your data</a>.</li>
+  <li><strong>Deletion:</strong> delete your account and data from <a href="/account/data">Your data</a>. Some billing records must be kept for legal reasons, and encrypted backups age out as described above.</li>
+  <li><strong>Correction:</strong> change your email address from <a href="/account/security">Security</a>.</li>
+  <li><strong>Consent:</strong> withdraw drafting consent or turn off the optional learning choice in the extension at any time, and withdraw consent for the writing page on that page.</li>
+  <li><strong>Devices:</strong> disconnect any browser from <a href="/account/devices">Devices</a>.</li>
+</ul>
+<p>Depending on where you live, you may have further rights, such as objecting to processing or complaining to a data protection authority. To use them, contact {{ legal_email(L.OPERATOR_PRIVACY_CONTACT) }}.</p>
+
+<h2 id="security">Security</h2>
+<p>Passwords are stored as salted hashes. Traffic is encrypted with HTTPS. Each account's drafting data is kept in its own isolated storage area. Browser connections use device tokens that you can revoke, and resetting your password revokes all of them. No system is perfectly secure, and we will notify you of a breach affecting your information as the law requires.</p>
+
+<h2 id="children">Children</h2>
+<p>Starling is not intended for children, and we do not knowingly collect personal information from anyone under the minimum age in our <a href="/terms">Terms of Service</a>.</p>
+
+<h2 id="changes">Changes to this policy</h2>
+<p>We will post changes on this page and update the effective date. If a change is significant, we will tell you by email or in the extension before it takes effect.</p>
+
+<h2 id="contact">Contact</h2>
+<p>{{ L.OPERATOR_COMPANY_NAME|placeholders }}, {{ L.OPERATOR_REGISTERED_ADDRESS|placeholders }}. Privacy contact: {{ legal_email(L.OPERATOR_PRIVACY_CONTACT) }}.</p>
+{% endblock %}

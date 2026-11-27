@@ -1,0 +1,16 @@
+packages:
+  - .
+
+allowBuilds:
+  esbuild: true
+  spawn-sync: true
+
+overrides:
+  # Keep the development/build chain patched too. These packages are not
+  # shipped in the extension, but an unsafe local build tool is still a
+  # release-process risk.
+  esbuild: 0.28.1
+  adm-zip: 0.6.1
+  shell-quote: 1.10.0
+  tmp: 0.2.7
+  uuid: 11.1.1

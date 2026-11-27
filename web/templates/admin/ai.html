@@ -1,0 +1,109 @@
+{#- GET /admin/ai. POST /admin/ai/test, /admin/ai/pause (pause_reason; optional pause_message, the text customers see)
+    and /admin/ai/resume (optional resume_reason); each needs csrf_token and elevation and answers 303 back here with a
+    flash message.
+    Extra context: admin, errors (dict; stays empty, kept for the form macros), ai:
+      base_url_host; reasoning_effort; services {ok, error_code or null} (the services status call);
+      keys [{slot, configured, masked or null, in_use}] (the last 4 characters at most; empty when services did not answer);
+      models [{lane, model}];
+      budgets {cost_today_micros, daily_budget_micros, cost_month_micros, monthly_budget_micros, day_tripped, month_tripped, free_tripped};
+      pause {paused, message or null, since or null} (the owner pause, service_state ai_paused);
+      service {status, message or null, owner_paused, free_paused} (what customers get);
+      last_test {at, ok, latency_ms, model, error_code or null} or null;
+      search {enabled, model, per_account_day, searches_today, cost_today_micros, price_per_1k_micros or null}
+      (web search since UTC midnight, from ai_calls lane starling-search) -#}
+{% extends "_admin_layout.html" %}
+{% block title %}AI provider · Owner dashboard · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, error_summary, input_field, budget_meter with context %}
+<h1>AI provider</h1>
+<p class="muted">Connection settings come from the server environment and cannot be changed here.</p>
+
+<section class="panel" aria-labelledby="pause-title">
+  <h2 id="pause-title">Drafting for customers</h2>
+  {% if ai.pause.paused %}
+  <p><span class="health-bad">Paused by the owner</span>{% if ai.pause.since %} since {{ ai.pause.since|datetime }}{% endif %}. Customers see: {{ ai.pause.message }}</p>
+  <form class="form" method="post" action="/admin/ai/resume" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["resume_reason"], general="ai_resume") }}
+    {{ input_field("resume_reason", "Note for the audit log (optional)", errors=errors, required=false, maxlength="200") }}
+    <div><button class="btn" type="submit">Resume drafting</button></div>
+  </form>
+  {% else %}
+  {% if ai.service.status == "paused" %}
+  <p><span class="health-bad">Paused</span>: {{ ai.service.message }}</p>
+  {% elif ai.service.free_paused %}
+  <p><span class="health-warn">Paused for free accounts</span> until the daily budget resets at 00:00 UTC; paid accounts keep drafting.</p>
+  {% else %}
+  <p><span class="health-ok">Running</span> for every plan.</p>
+  {% endif %}
+  <p class="small muted">Pausing refuses new drafting requests and AI calls for all customers until you resume.</p>
+  <form class="form" method="post" action="/admin/ai/pause" novalidate>
+    {{ csrf() }}
+    {{ error_summary(errors, ["pause_reason", "pause_message"], general="ai_pause") }}
+    {{ input_field("pause_reason", "Reason (kept in the audit log)", errors=errors, maxlength="200") }}
+    {{ input_field("pause_message", "Message customers see (optional)", errors=errors, required=false, maxlength="200", hint="Leave it empty for a standard short notice.") }}
+    <div><button class="btn btn-danger" type="submit">Pause drafting for all customers</button></div>
+  </form>
+  {% endif %}
+</section>
+
+<section class="panel" aria-labelledby="keys-title">
+  <h2 id="keys-title">Keys and models</h2>
+  {% if not ai.services.ok %}
+  <p class="notice notice-warning">The services process did not answer (<span class="mono">{{ ai.services.error_code }}</span>), so key status is unavailable. The models below come from the gateway's settings.</p>
+  {% endif %}
+  <dl class="definition-list">
+    <dt>Endpoint host</dt><dd class="mono">{{ ai.base_url_host }}</dd>
+    {% for k in ai["keys"] %}
+    <dt>{{ k.slot|capitalize }} key</dt><dd>{% if k.configured %}Configured{% if k.masked %}, ending <span class="mono">{{ k.masked }}</span>{% endif %}{% if k.in_use %} (in use){% endif %}{% else %}Not configured{% endif %}</dd>
+    {% endfor %}
+    {% for lane in ai.models %}
+    <dt>Model for {{ lane.lane }}</dt><dd class="mono">{{ lane.model }}</dd>
+    {% endfor %}
+    <dt>Reasoning effort</dt><dd class="mono">{{ ai.reasoning_effort }}</dd>
+  </dl>
+</section>
+
+<section class="panel" aria-labelledby="test-title">
+  <h2 id="test-title">Connection test</h2>
+  {% if ai.last_test %}
+  <p>Last test {{ ai.last_test.at|datetime }}: {% if ai.last_test.ok %}<span class="health-ok">passed</span> in {{ ai.last_test.latency_ms|number }} ms using <span class="mono">{{ ai.last_test.model }}</span>{% else %}<span class="health-bad">failed</span> with <span class="mono">{{ ai.last_test.error_code or "an unknown error" }}</span>{% endif %}.</p>
+  {% else %}
+  <p class="muted">No test has been run yet.</p>
+  {% endif %}
+  <form method="post" action="/admin/ai/test">
+    {{ csrf() }}
+    {{ error_summary(errors, [], general="ai_test", title="The test could not run") }}
+    <div class="button-row"><button class="btn" type="submit">Run connection test</button></div>
+  </form>
+  <p class="small muted">The test sends one short request with no customer data to each configured model and counts toward the daily budget.</p>
+</section>
+
+<section class="panel" aria-labelledby="budget-title">
+  <h2 id="budget-title">Budgets</h2>
+  <div class="meter">
+    <p class="meter-label" id="ai-budget-day"><span>Today{% if ai.budgets.day_tripped %} (used up){% endif %}</span><span>{{ ai.budgets.cost_today_micros|usd_micros }} of {{ ai.budgets.daily_budget_micros|usd_micros }}</span></p>
+    {{ budget_meter("ai-budget-day", ai.budgets.cost_today_micros, ai.budgets.daily_budget_micros) }}
+  </div>
+  <div class="meter">
+    <p class="meter-label" id="ai-budget-month"><span>This month{% if ai.budgets.month_tripped %} (used up){% endif %}</span><span>{{ ai.budgets.cost_month_micros|usd_micros }} of {{ ai.budgets.monthly_budget_micros|usd_micros }}</span></p>
+    {{ budget_meter("ai-budget-month", ai.budgets.cost_month_micros, ai.budgets.monthly_budget_micros) }}
+  </div>
+  <p class="small muted">When a budget is used up, drafting pauses for all customers until the next day or month. Free accounts pause earlier, once today's spend reaches their share of the daily budget.</p>
+</section>
+
+<section class="panel" aria-labelledby="search-title">
+  <h2 id="search-title">Web search</h2>
+  {% if ai.search.enabled %}
+  <p>On, with <span class="mono">{{ ai.search.model }}</span>: at most one search a draft and {{ ai.search.per_account_day }} a day per customer, only for a post that makes a claim its own links do not cover, and always inside the customer's plan ceiling.</p>
+  <p class="meter-label"><span>Today</span><span>{{ ai.search.searches_today }} search{% if ai.search.searches_today != 1 %}es{% endif %}, {{ ai.search.cost_today_micros|usd_micros }}</span></p>
+  {% if ai.search.price_per_1k_micros is none %}
+  <p class="notice notice-warning">The AI pricing file has no <span class="mono">web_search</span> price, so every search is refused until one is added. In production the services process does not start without it.</p>
+  {% else %}
+  <p class="small muted">Priced at {{ ai.search.price_per_1k_micros|usd_micros }} per 1,000 searches plus the pages read, at the model's token price. Included in the budgets above.</p>
+  {% endif %}
+  {% else %}
+  <p>Off (<span class="mono">WEB_SEARCH=false</span>). Drafts use only the post's own links and the shared news pool.</p>
+  {% endif %}
+</section>
+{% endblock %}

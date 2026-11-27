@@ -1,0 +1,219 @@
+{#- Shared macros. Import with context, e.g.
+    {% from "_macros.html" import csrf, error_summary, input_field with context %}
+
+    Form error contract (matches backend/server/starling_server/auth/routes.py):
+      errors: dict mapping a field name to one message, plus a general message under "form"
+              on single-form pages, or under the form's own key on pages with several forms
+              (for example "password", "email", "delete").
+      form:   dict of previously submitted values (never passwords).
+    Field ids are "field-<name>", so the error summary links to "#field-<name>". -#}
+
+{% macro star_icon(class="star-icon") -%}
+<svg class="{{ class }}" aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+{%- endmacro %}
+
+{% macro csrf() -%}
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+{%- endmacro %}
+
+{% macro nav_link(href, label, current=false, class="") -%}
+<a href="{{ href }}"{% if class %} class="{{ class }}"{% endif %}{% if current %} aria-current="page"{% endif %}>{{ label }}</a>
+{%- endmacro %}
+
+{% macro error_summary(errors, fields=[], general="form", title="There is a problem") -%}
+{%- set ns = namespace(items=[], general=none) -%}
+{%- if errors -%}
+  {%- if errors[general] is defined -%}{%- set ns.general = errors[general] -%}{%- endif -%}
+  {%- for name in fields -%}
+    {%- if errors[name] is defined -%}{%- set ns.items = ns.items + [(name, errors[name])] -%}{%- endif -%}
+  {%- endfor -%}
+{%- endif -%}
+<div class="error-summary" data-error-summary aria-live="assertive" aria-atomic="true" tabindex="-1"{% if not ns.items and not ns.general %} hidden{% endif %}>
+{%- if ns.items or ns.general %}
+  <p class="error-summary-title">{{ title }}</p>
+  <ul>
+  {%- if ns.general %}
+    <li>{{ ns.general }}</li>
+  {%- endif %}
+  {%- for name, message in ns.items %}
+    <li><a href="#field-{{ name }}">{{ message }}</a></li>
+  {%- endfor %}
+  </ul>
+{%- endif %}
+</div>
+{%- endmacro %}
+
+{% macro input_field(name, label, type="text", autocomplete="off", value="", errors=none, hint="", required=true, inputmode="", maxlength="", minlength="", spellcheck=true, reveal=true, label_link=none, autofocus=false) -%}
+{%- set error = errors[name] if errors and errors[name] is defined else "" -%}
+{%- set described = [] -%}
+{%- if hint %}{% set described = described + ["field-" ~ name ~ "-hint"] %}{% endif -%}
+{%- if error %}{% set described = described + ["field-" ~ name ~ "-error"] %}{% endif -%}
+<div class="field">
+  {%- if label_link %}
+  <div class="label-row">
+    <label for="field-{{ name }}">{{ label }}</label>
+    <a class="label-link" href="{{ label_link.href }}" data-carry-email>{{ label_link.text }}</a>
+  </div>
+  {%- else %}
+  <label for="field-{{ name }}">{{ label }}</label>
+  {%- endif %}
+  {%- if hint %}
+  <p class="hint" id="field-{{ name }}-hint">{{ hint }}</p>
+  {%- endif %}
+  {%- if error %}
+  <p class="field-error" id="field-{{ name }}-error"><span class="visually-hidden">Error: </span>{{ error }}</p>
+  {%- endif %}
+  {%- if type == "password" and reveal %}
+  <div class="input-action">
+  {%- endif %}
+  <input id="field-{{ name }}" name="{{ name }}" type="{{ type }}" autocomplete="{{ autocomplete }}"
+    {%- if value %} value="{{ value }}"{% endif %}
+    {%- if required %} required aria-required="true"{% endif %}
+    {%- if inputmode %} inputmode="{{ inputmode }}"{% endif %}
+    {%- if maxlength %} maxlength="{{ maxlength }}"{% endif %}
+    {%- if minlength %} minlength="{{ minlength }}"{% endif %}
+    {%- if not spellcheck or type == "password" %} spellcheck="false" autocapitalize="none"{% endif %}
+    {%- if described %} aria-describedby="{{ described|join(' ') }}"{% endif %}
+    {%- if autofocus %} autofocus{% endif %}
+    {%- if error %} aria-invalid="true"{% endif %}>
+  {%- if type == "password" and reveal %}
+    {#- Shown by static/js/site.js; without JavaScript the field is an ordinary password field. #}
+    <button class="reveal-toggle" type="button" data-reveal="field-{{ name }}" aria-controls="field-{{ name }}" aria-pressed="false" hidden>Show</button>
+  </div>
+  {%- endif %}
+</div>
+{%- endmacro %}
+
+{#- The Google button, drawn to Google's own sign-in branding rules (dark theme): the full-colour
+    "G" on the left, "Continue with Google" (or "Sign up with Google") in medium weight, a thin
+    grey outline on near-black. Only shown when Google sign-in is configured (site.google_sign_in).
+    `href` starts the round trip (GET /auth/google...). -#}
+{% macro google_mark() -%}
+<svg class="google-mark" aria-hidden="true" focusable="false" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+{%- endmacro %}
+
+{% macro google_button(href, label="Continue with Google") -%}
+<a class="btn-google" href="{{ href }}" data-busy-link>{{ google_mark() }}<span>{{ label }}</span></a>
+{%- endmacro %}
+
+{% macro google_submit(label="Connect Google") -%}
+<button class="btn-google" type="submit">{{ google_mark() }}<span>{{ label }}</span></button>
+{%- endmacro %}
+
+{% macro auth_divider(text="or") -%}
+<p class="auth-divider"><span>{{ text }}</span></p>
+{%- endmacro %}
+
+{% macro checkbox_field(name, errors=none, checked=false, required=true) -%}
+{%- set error = errors[name] if errors and errors[name] is defined else "" -%}
+<div class="field">
+  {%- if error %}
+  <p class="field-error" id="field-{{ name }}-error"><span class="visually-hidden">Error: </span>{{ error }}</p>
+  {%- endif %}
+  <div class="checkbox">
+    <input id="field-{{ name }}" name="{{ name }}" type="checkbox" value="yes"
+      {%- if checked %} checked{% endif %}
+      {%- if required %} required aria-required="true"{% endif %}
+      {%- if error %} aria-invalid="true" aria-describedby="field-{{ name }}-error"{% endif %}>
+    <label for="field-{{ name }}">{{ caller() }}</label>
+  </div>
+</div>
+{%- endmacro %}
+
+{% macro legal_email(value) -%}
+{%- if value is placeholder or "@" not in value %}{{ value|placeholders }}{% else %}<a href="mailto:{{ value }}">{{ value }}</a>{% endif -%}
+{%- endmacro %}
+
+{#- "Add to Chrome": the one step nobody can skip, so it is always a button. Production always has
+    the store address (config.py works it out from the extension id when it is not set); a development
+    site without one shows a greyed button that says so, rather than hiding the gap. -#}
+{% macro store_button(secondary=false, label="Add to Chrome") -%}
+{%- if site.extension_install_url is defined and site.extension_install_url -%}
+<a class="btn{% if secondary %} btn-secondary{% endif %} store-button" href="{{ site.extension_install_url }}" target="_blank" rel="noopener">{{ star_icon("btn-star") }}<span>{{ label }}</span></a>
+{%- else -%}
+<span class="btn btn-secondary store-button" aria-disabled="true" title="Set STARLING_EXTENSION_INSTALL_URL">Chrome Web Store link not set</span>
+{%- endif -%}
+{%- endmacro %}
+
+{#- A link to the Chrome Web Store listing when site.extension_install_url is configured,
+    plain text otherwise (the gateway does not send that key yet). -#}
+{% macro store_link(text) -%}
+{%- if site.extension_install_url is defined and site.extension_install_url -%}<a href="{{ site.extension_install_url }}">{{ text }}</a>{%- else -%}{{ text }}{%- endif -%}
+{%- endmacro %}
+
+{#- "Email support@..." or, while the support address is still a placeholder, a link to /contact. -#}
+{% macro support_cta() -%}
+{%- if site.support_email is placeholder or "@" not in site.support_email -%}<a href="/contact">Contact support</a>{%- else -%}Email <a href="mailto:{{ site.support_email }}">{{ site.support_email }}</a>{%- endif -%}
+{%- endmacro %}
+
+{#- Price of one plan dict from web/render.py plan_dict: price_label ("$9", "Free") plus the interval
+    for paid plans. The free plan has no currency or interval. -#}
+{% macro plan_price(plan) -%}
+{%- if plan.price_label is defined and plan.price_label %}{{ plan.price_label }}{% else %}{{ plan.amount_cents|money(plan.currency) }}{% endif -%}
+{%- if plan.amount_cents > 0 %} <span class="per">/ {{ plan.interval or "month" }}</span>{% endif -%}
+{%- endmacro %}
+
+{#- A plan card's name and price, from context. The free plan's name and its price label are the
+    same word, so printing both only repeats it: the big price line carries the word and the
+    heading stays in the document outline for assistive technology. `level` is the heading tag the
+    page's outline needs at that point. -#}
+{% macro plan_heading(plan, level="h3") -%}
+{%- set repeats = plan.price_label is defined and plan.price_label and plan.price_label|lower == plan.name|lower -%}
+<{{ level }}{% if repeats %} class="visually-hidden"{% endif %}>{{ plan.name }}</{{ level }}>
+<p class="plan-price{% if repeats %} plan-price-only{% endif %}">{{ plan_price(plan) }}</p>
+{%- endmacro %}
+
+{% macro plan_name(plans, code) -%}
+{%- for p in plans if p.code == code %}{{ p.name }}{% else %}{{ code|capitalize }}{% endfor -%}
+{%- endmacro %}
+
+{% macro budget_meter(label_id, spent_micros, budget_micros) -%}
+{%- set pct = usage_percent(spent_micros, budget_micros) -%}
+<div role="meter" aria-labelledby="{{ label_id }}" aria-valuemin="0" aria-valuemax="{{ budget_micros }}" aria-valuenow="{{ [spent_micros, budget_micros]|min }}" aria-valuetext="{{ spent_micros|usd_micros }} of {{ budget_micros|usd_micros }}, {{ pct }} percent">
+  <svg class="meter-bar" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect class="meter-track" x="0" y="0" width="100" height="10"/><rect class="meter-fill{% if pct >= 100 %} is-full{% elif pct >= 80 %} is-high{% endif %}" x="0" y="0" width="{{ pct }}" height="10"/></svg>
+</div>
+{%- endmacro %}
+
+{#- live: the figures carry data-usage names (the customer's own overview), so the numbers are
+    said once, here, and read by the tests and the journeys. The bar covers used plus in progress. -#}
+{% macro usage_meter(usage, id="usage", live=false) -%}
+{%- set consumed = usage.used + usage.reserved -%}
+{%- set pct = usage_percent(consumed, usage.allowance) -%}
+<div class="meter">
+  {%- if live %}
+  <p class="meter-label" id="{{ id }}-label"><span>{{ usage.unit_label|capitalize }} used this period</span><span><span data-usage="used">{{ usage.used|number }}</span> of <span data-usage="allowance">{{ usage.allowance|number }}</span></span></p>
+  {%- else %}
+  <p class="meter-label" id="{{ id }}-label"><span>{{ usage.unit_label|capitalize }} used this period</span><span>{{ consumed|number }} of {{ usage.allowance|number }}</span></p>
+  {%- endif %}
+  <div role="meter" aria-labelledby="{{ id }}-label" aria-valuemin="0" aria-valuemax="{{ usage.allowance }}" aria-valuenow="{{ [consumed, usage.allowance]|min }}" aria-valuetext="{{ consumed|number }} of {{ usage.allowance|number }} {{ usage.unit_label }} used, {{ usage.remaining|number }} remaining" data-meter-used="{{ usage.used }}" data-meter-reserved="{{ usage.reserved }}" data-meter-remaining="{{ usage.remaining }}" data-meter-allowance="{{ usage.allowance }}">
+    <svg class="meter-bar" viewBox="0 0 100 10" preserveAspectRatio="none" aria-hidden="true" focusable="false"><rect class="meter-track" x="0" y="0" width="100" height="10"/><rect class="meter-fill{% if usage.remaining <= 0 %} is-full{% elif usage.near_limit %} is-high{% endif %}" x="0" y="0" width="{{ pct }}" height="10"/></svg>
+  </div>
+</div>
+{%- endmacro %}
+
+{#- The installed app's bottom navigation on phones (css/site.css shows it below 48em; wider
+    screens use the header). `current` is "write", "voice" or "account". The page adds has-tabbar to
+    its body class so nothing hides behind the bar. -#}
+{% macro app_tabbar(current) -%}
+<nav class="tabbar" aria-label="Starling app">
+  <ul>
+    <li><a href="/write"{% if current == "write" %} aria-current="page"{% endif %}><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg><span>Write</span></a></li>
+    <li><a href="/write/voice"{% if current == "voice" %} aria-current="page"{% endif %}><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><path d="M5 6h14M5 11h14M5 16h9"/></svg><span>Voice</span></a></li>
+    <li><a href="/account"{% if current == "account" %} aria-current="page"{% endif %}><svg aria-hidden="true" focusable="false" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Account</span></a></li>
+  </ul>
+</nav>
+{%- endmacro %}
+
+{#- A date a customer reads (an allowance reset, a period end, a cancellation, a last-seen
+    day). The text is the UTC day the server worked out, which is what a reader without
+    JavaScript and every test sees; the datetime attribute carries the machine value, and
+    static/js/site.js replaces the text with the same day in the reader's own time zone.
+    The browser extension shows that zone too, so both name the same day. Owner-dashboard
+    stamps say UTC in their own text and are not marked, so they stay UTC. -#}
+{% macro local_date(ts) -%}
+<time datetime="{{ ts|iso }}" data-local-date>{{ ts|date }}</time>
+{%- endmacro %}
+
+{% macro local_datetime(ts) -%}
+<time datetime="{{ ts|iso }}" data-local-datetime>{{ ts|datetime }}</time>
+{%- endmacro %}

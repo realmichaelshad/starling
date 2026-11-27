@@ -1,0 +1,15 @@
+# Release gate allowlist: `path-glob :: regex` per line.
+# The regex is matched against the offending line (or the finding category).
+# Every entry needs a reason. Keep this list short; prefer fixing the source.
+
+# The scanner itself spells out the patterns it looks for.
+scripts/check_release.py :: .*
+scripts/release_allowlist.txt :: .*
+
+# Everything the end-to-end harness writes while it runs lives in `e2e/.run/` - one folder per
+# run holding the control database, each customer's data folder, the process logs, the state
+# file, the throwaway self-signed certificate for the fake Stripe pages, and the browser
+# profiles the browser journeys use. By nature it is full of absolute machine paths, SQLite
+# files and fake credentials for the two local fakes. The folder is git-ignored, is never part
+# of a release, and can be removed whenever no harness is running.
+e2e/.run/* :: .*

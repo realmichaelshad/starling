@@ -1,0 +1,80 @@
+# Reference production deployment on Fly.io. Replace every [[PLACEHOLDER]] before the first deploy.
+#
+# Deploy from the repository root (the build context must be the repository root):
+#   fly deploy --config deploy/fly.toml --dockerfile deploy/Dockerfile
+#
+# Before the first deploy:
+#   fly apps create [[FLY_APP_NAME]]
+#   fly volumes create starling_data --region [[FLY_REGION]] --size 20
+#   fly secrets set STARLING_SECRET_KEY=... STARLING_SERVICES_TOKEN_KEY=... BACKUP_PASSPHRASE=...
+#     plus the AI, Stripe and SMTP credentials and the business details (see .env.example).
+#     Secrets never go in this file.
+#
+# Exactly one machine. The gateway keeps per-account slots and the engine pool in memory (one
+# uvicorn worker), and SQLite has a single writer on a volume that belongs to one machine. Do not
+# raise `fly scale count` above 1 or add regions without a documented redesign.
+
+app = "[[FLY_APP_NAME]]"
+primary_region = "[[FLY_REGION]]"
+kill_signal = "SIGTERM"
+kill_timeout = "30s" # engines get 10 s to finish (CONTRACTS 3.1), then services and the gateway
+
+[build]
+  dockerfile = "deploy/Dockerfile"
+  build-target = "runtime"
+
+[env]
+  STARLING_ENV = "production"
+  STARLING_ISOLATION = "os"
+  STARLING_DATA_DIR = "/data"
+  STARLING_PUBLIC_URL = "https://[[PUBLIC_HOSTNAME]]"
+  BACKUP_DIR = "/data/backups"
+  EMAIL_MODE = "smtp"
+  STRIPE_MODE = "live"
+  LOG_LEVEL = "INFO"
+  # The services process listens on loopback TCP. Its default with OS isolation is a Unix socket in
+  # /run/starling, a folder the supervisor creates as root with mode 0755, so the services user
+  # cannot bind there and the process restarts in a loop (found on the beta's first deploy; see
+  # "Status and limitations" in the README). Every call to the services process carries a signed
+  # per-account token, and a loopback address is never public.
+  STARLING_SERVICES_LISTEN = "tcp:127.0.0.1:8766"
+  STARLING_SERVICES_URL = "http://127.0.0.1:8766"
+  # STARLING_TRUSTED_PROXIES = "[[FLY_PROXY_PEERS]],[[APP_IPV4]],[[APP_IPV6]]"
+  #   Set it only after the first-deploy check in deploy/README.md ("Client IP addresses on Fly.io").
+  # Do not add UVICORN_* variables: the supervisor controls workers, proxy headers and access logs.
+
+# Fly volumes are encrypted at rest by default, but a volume lives on one physical host: if that host
+# fails, the data on it is gone. Backups are therefore mandatory, not optional. The supervisor writes
+# an encrypted, verified archive every night to BACKUP_DIR on this same volume, so copy archives off
+# the machine regularly as well (deploy/README.md) and keep Fly's volume snapshots as an extra layer.
+[mounts]
+  source = "starling_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  # Always on. Stopping an idle machine would kill customer engines in the middle of requests, drop
+  # Stripe webhooks and halt background jobs (billing queue and reconciler, reservation sweeper,
+  # news refresh, nightly backups).
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  # One machine serves everything; streams can stay open for up to 240 seconds. Past the hard limit
+  # the Fly proxy queues new requests instead of sending them to the machine.
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 150
+    hard_limit = 250
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/healthz"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "60s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "4gb"

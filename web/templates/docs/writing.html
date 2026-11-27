@@ -1,0 +1,60 @@
+{% extends "_docs_layout.html" %}
+{% block title %}Writing with Starling · Starling docs{% endblock %}
+{% block description %}How Starling drafts replies, quotes, new posts and rewrites inside X's own composer, and what it never does.{% endblock %}
+{% block content %}
+<h1>Writing with Starling</h1>
+<p class="lead">Starling works inside X's own composers. Every draft lands in X's box for you to review. Starling never posts.</p>
+
+<h2 id="composer">Create and Enhance</h2>
+<p>Wherever X shows a composer, Starling adds a ✦ button next to X's own Post or Reply button. Its label tells you what it will do.</p>
+<div class="table-wrap" role="region" aria-label="Composer button labels" tabindex="0">
+  <table>
+    <thead>
+      <tr><th scope="col">What is in the box</th><th scope="col">Button</th><th scope="col">What Starling does</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Nothing yet</td><td>Create</td><td>Writes a new draft for that post, reply or quote.</td></tr>
+      <tr><td>Your own words</td><td>Enhance</td><td>Rewrites what you typed so it reads better, keeping your point.</td></tr>
+    </tbody>
+  </table>
+</div>
+<p>While Starling works, the button shows its progress, and you can cancel. A request you cancel before anything is shown does not use your allowance; one you stop after its text has started to appear does.</p>
+
+<h2 id="replies">Replies and quotes</h2>
+<p>Press ✦ on a post to ask Starling whether it is worth a reply or a quote. When it is, Starling opens X's composer for that exact post and writes the draft into it.</p>
+<p>Sometimes Starling suggests leaving a post alone and tells you why. You can still ask for a draft in the panel.</p>
+
+<h2 id="posts">New posts</h2>
+<p>Start a new post in X and choose Create. Without a subject, Starling picks something new in your niche and writes about it, with the pages it used. Or ask the panel for ideas first and draft from the one you pick.</p>
+<p class="notice">Post ideas follow your own niche: Starling looks for what is new in it, in news feeds{% if site.web_search is defined and site.web_search %} and web searches{% endif %}, and cites the pages it used. Replies, quotes, rewrites and chat work on any post.</p>
+
+<h2 id="your-typing">Your typing comes first</h2>
+<p>If you type in the composer while Starling is working, Starling stops and leaves your text alone. If a draft cannot be placed, for example because you closed the composer, Starling offers the draft for you to copy so nothing is lost.</p>
+
+<h2 id="images">Posts with images</h2>
+<p>When the post you ask about, or your own draft, has images attached, the extension sends small copies of them so the draft can take them into account.</p>
+
+<h2 id="voice">How drafts match your voice</h2>
+<p>Starling drafts from:</p>
+<ul>
+  <li>your own posts: on your profile on X, open the panel's Settings and press "Add my posts from this page" (it adds the posts of yours that X has loaded there, never anyone else's, and never posts anything),</li>
+  <li>writing samples you add in the panel,</li>
+  <li>what happens to its drafts: whether you used, edited or discarded them,</li>
+  <li>preferences you confirm in chat, such as "no hashtags", and</li>
+  <li>your own profile and post stats, if you turned on the optional learning choice.</li>
+</ul>
+
+<h2 id="never">What Starling never does</h2>
+<ul>
+  <li>It never presses Post or Reply to publish anything.</li>
+  <li>It never likes, follows or sends messages.</li>
+  <li>It does not run on direct messages.</li>
+</ul>
+<p>If X changes its page and Starling cannot act safely, it leaves X unchanged and tells you, instead of guessing.</p>
+
+<h2 id="responsibility">You are responsible for what you post</h2>
+<p>AI drafts can be wrong, out of date or unsuitable. Read every draft before you post it, check any facts it states, and follow X's rules. See the <a href="/acceptable-use">Acceptable use policy</a>.</p>
+
+<h2 id="usage">How drafting uses your allowance</h2>
+<p>A draft is used each time Starling gives you a draft or an answer. Requests that fail, even partway through, requests you cancel before anything is shown, and drafts Starling holds back are not charged. See <a href="/docs/plans-and-usage">Plans and usage</a>.</p>
+{% endblock %}

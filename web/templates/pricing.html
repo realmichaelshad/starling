@@ -1,0 +1,122 @@
+{#- GET /pricing
+    Extra context:
+      plans: public plans, cheapest first, from web/render.py plan_dict (code, name, monthly_credits,
+             amount_cents, currency, interval, is_paid, price_label, rate_per_minute, rate_per_day)
+      unit:  {name, label}
+      state: account state (CONTRACTS 6.2) when signed in, otherwise null
+    Signed-in actions POST to /billing/checkout, /billing/upgrade or /billing/downgrade
+    with field plan_code. -#}
+{% extends "base.html" %}
+{% block title %}Pricing · Starling{% endblock %}
+{% block description %}Starling plans: start free and upgrade for more drafts each month. No overage charges, and you can cancel at any time.{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, plan_heading, plan_price, local_date with context %}
+{% set st = state if state is defined else none %}
+{% set current = st.plan if st else none %}
+{% set ns = namespace(current_amount=0, currency="") %}
+{% for p in plans %}
+  {% if current and p.code == current.code %}{% set ns.current_amount = p.amount_cents %}{% endif %}
+  {% if p.amount_cents > 0 and p.currency and not ns.currency %}{% set ns.currency = p.currency|upper %}{% endif %}
+{% endfor %}
+<div class="wrap">
+  <header class="page-header">
+    <p class="eyebrow">Pricing</p>
+    <h1>Start free. Upgrade when you need more {{ unit.label }}.</h1>
+    <p class="lead">Every plan includes replies, quotes, new posts, rewrites, side panel chat and topic ideas. Plans differ in how many {{ unit.label }} you get each month.</p>
+  </header>
+
+  {% if request_path == "/pricing" and checkout_cancelled is defined and checkout_cancelled %}
+  <div class="notice" data-checkout="cancelled">
+    <p>Checkout cancelled. You have not been charged. Choose a plan whenever you are ready.</p>
+  </div>
+  {% endif %}
+  {% if st and st.usage.remaining <= 0 %}
+  <div class="notice notice-warning">
+    <p class="notice-title">You have used all your {{ unit.label }} for this period</p>
+    <p>Your {{ st.plan.name }} allowance resets on {{ local_date(st.usage.resets_at) }}. Upgrading adds {{ unit.label }} as soon as the payment goes through.</p>
+  </div>
+  {% elif st and st.usage.fair_use_blocked %}
+  <div class="notice notice-warning">
+    <p class="notice-title">Drafting is paused until {{ local_date(st.usage.resets_at) }}</p>
+    <p>Your account reached this period's fair-use limit. Nothing extra is charged.</p>
+  </div>
+  {% endif %}
+
+  <ul class="plans" role="list">
+  {% for plan in plans %}
+    {% set is_current = current is not none and current.code == plan.code %}
+    <li class="plan{% if is_current %} is-current{% endif %}">
+      {% if is_current %}<span class="badge">Your plan</span>{% endif %}
+      {{ plan_heading(plan, "h2") }}
+      <p class="plan-allowance">{{ plan.monthly_credits|number }} {{ unit.label }} a month</p>
+      <p class="plan-pace">About {{ (plan.monthly_credits / 30)|round|int|number }} a day on average, up to {{ plan.rate_per_day|number }} requests a day</p>
+      <div class="plan-action">
+        {% if not st %}
+        {% if plan.amount_cents == 0 %}
+        <a class="btn btn-secondary" href="/signup">Start free</a>
+        {% else %}
+        {#- The plan chosen here is not forgotten: after sign-up the person lands on Billing with it ready. -#}
+        <a class="btn" href="/signup?next={{ ('/account/billing?choose=' ~ plan.code)|urlencode }}">Start with {{ plan.name }}</a>
+        {% endif %}
+        {% elif is_current and plan.amount_cents == 0 %}
+        <p class="plan-current">Your current plan</p>
+        {% elif is_current %}
+        <a class="btn btn-secondary" href="/account/billing">Manage billing</a>
+        {% elif current.cancel_at and plan.amount_cents == 0 %}
+        <p class="plan-current"><span>Your account moves here on {{ local_date(current.cancel_at) }}</span></p>
+        {% elif current.cancel_at %}
+        <a class="btn btn-secondary" href="/account/billing">Keep {{ current.name }} to change plans</a>
+        {% elif plan.amount_cents == 0 %}
+        <a class="btn btn-secondary" href="/account/billing#cancel-title">Cancel to move to {{ plan.name }}</a>
+        {% elif ns.current_amount == 0 %}
+        <form method="post" action="/billing/checkout">
+          {{ csrf() }}
+          <input type="hidden" name="plan_code" value="{{ plan.code }}">
+          <button class="btn" type="submit">Choose {{ plan.name }}</button>
+        </form>
+        {% elif plan.amount_cents > ns.current_amount %}
+        <form method="post" action="/billing/upgrade">
+          {{ csrf() }}
+          <input type="hidden" name="plan_code" value="{{ plan.code }}">
+          <button class="btn" type="submit">Upgrade to {{ plan.name }}</button>
+        </form>
+        {% else %}
+        <form method="post" action="/billing/downgrade">
+          {{ csrf() }}
+          <input type="hidden" name="plan_code" value="{{ plan.code }}">
+          <button class="btn btn-secondary" type="submit">Switch to {{ plan.name }}</button>
+        </form>
+        {% endif %}
+        {% if plan.amount_cents > 0 and not is_current and not (current and current.cancel_at) %}<p class="plan-fine">Secure checkout by Stripe · Cancel any time</p>{% endif %}
+      </div>
+    </li>
+  {% endfor %}
+  </ul>
+
+  <p class="small muted">Post ideas follow your own niche: Starling looks for what is new in it, in news feeds{% if site.web_search is defined and site.web_search %} and web searches{% endif %}, and cites the pages it used. Replies, quotes, rewrites and chat work on any post.</p>
+
+  <div class="pricing-details">
+  <section class="section prose" aria-labelledby="counting-title">
+    <h2 id="counting-title">How {{ unit.label }} are counted</h2>
+    <ul>
+      <li>A {{ unit.name }} is used each time Starling returns a draft or an answer to you.</li>
+      <li>If a request fails, even partway through, or you cancel it before anything is shown, nothing is used. If you stop one after its text has started to appear, it counts.</li>
+      <li>Nothing is used when Starling holds a draft back after its own checks, advises you to wait instead of posting, or finds nothing to improve in your text.</li>
+      <li>Allowances reset every month: on your billing date on a paid plan, and monthly from the day you verified your email on Free.</li>
+      <li>There are no overage charges. When you run out, drafting pauses until your allowance resets or you upgrade.</li>
+      <li>When you upgrade, you pay only the difference for the days left in this period, and get extra {{ unit.label }} in proportion to those days, as soon as the payment goes through.</li>
+      <li>Downgrades take effect at the end of the current billing period.</li>
+      <li>If you cancel, you keep your paid plan until the end of the period, then your account moves to Free.</li>
+    </ul>
+    <p>Each plan also has a fair-use limit on the AI processing cost of an account's requests in a period. If an account reaches it, drafting pauses until the allowance resets. It never adds charges.</p>
+  </section>
+
+  <section class="section prose" aria-labelledby="payments-title">
+    <h2 id="payments-title">Payments</h2>
+    <p>{% if ns.currency %}Prices are in {{ ns.currency }}. {% endif %}Payments are processed by Stripe, and card numbers never reach Starling's servers. Paid plans renew automatically each month until you cancel.</p>
+    <p>If a payment fails, your account page shows what to do. Update your payment method to keep your plan. If the problem is not fixed within a short grace period, the account moves to Free.</p>
+    <p>Read the <a href="/refunds">Refund policy</a> and the <a href="/terms">Terms of Service</a> before you subscribe.</p>
+  </section>
+  </div>
+</div>
+{% endblock %}

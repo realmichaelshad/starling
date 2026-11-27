@@ -1,0 +1,53 @@
+{#- GET/POST /login
+    Extra context: errors (dict or null; fields email, password, general "_form"), form (dict or null; email),
+    next (same-origin path validated by the server, or null),
+    google_link (optional: null, or {"email", "email_masked"} when a Google sign-in is waiting for this
+    account's password before Google can be connected; auth/google_routes.py).
+    POST fields: csrf_token, email, password, next.
+    site.google_sign_in: "Continue with Google" is shown above the form. -#}
+{% extends "base.html" %}
+{% block title %}Sign in · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import auth_divider, csrf, error_summary, google_button, input_field with context %}
+{% set frm = form if form else {} %}
+{% set linking = google_link is defined and google_link %}
+{% set google = site.google_sign_in is defined and site.google_sign_in %}
+<div class="narrow">
+  <header class="page-header">
+    {% if linking %}
+    <p class="eyebrow">One step to connect Google</p>
+    <h1>Enter your Starling password</h1>
+    <p class="lead">You already have a Starling account with <strong class="address">{{ google_link.email }}</strong>. Enter its password once to connect Google. After that, Continue with Google signs you straight in.</p>
+    {% else %}
+    <h1>Sign in</h1>
+    {% if next and next.startswith("/connect") %}
+    <p class="lead">Sign in to connect the Starling extension to your account.</p>
+    {% else %}
+    <p class="lead">Welcome back.</p>
+    {% endif %}
+    {% endif %}
+  </header>
+  {% if google and not linking %}
+  <div class="auth-providers">
+    {{ google_button("/auth/google?next=" ~ (next or "/account")|urlencode) }}
+  </div>
+  {{ auth_divider("or use your email") }}
+  {% endif %}
+  <form class="form" method="post" action="/login" novalidate>
+    {{ csrf() }}
+    {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+    {{ error_summary(errors, ["email", "password"]) }}
+    {% set typed_email = frm.email if frm.email is defined else "" %}
+    {{ input_field("email", "Email address", type="email", autocomplete="username", value=typed_email, errors=errors, spellcheck=false, inputmode="email", autofocus=not typed_email) }}
+    {{ input_field("password", "Password", type="password", autocomplete="current-password", errors=errors, label_link={"href": "/forgot-password", "text": "Forgot password?"}, autofocus=typed_email != "") }}
+    <div><button class="btn" type="submit">{% if linking %}Sign in and connect Google{% else %}Sign in{% endif %}</button></div>
+  </form>
+  {% if linking %}
+  <p class="form-footer muted small">Do not know the password? Choose Forgot password, then come back and choose Continue with Google again.</p>
+  {% else %}
+  <p class="form-footer">New to Starling? <a href="/signup{% if next and next != '/account' %}?next={{ next|urlencode }}{% endif %}">Create an account</a></p>
+  {% endif %}
+</div>
+{% endblock %}

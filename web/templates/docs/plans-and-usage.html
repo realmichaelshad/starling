@@ -1,0 +1,52 @@
+{% extends "_docs_layout.html" %}
+{% block title %}Plans and usage · Starling docs{% endblock %}
+{% block description %}How Starling's monthly allowance works, what uses a draft, rate limits, plan changes and payments.{% endblock %}
+{% block content %}
+<h1>Plans and usage</h1>
+<p class="lead">How your monthly allowance works, what uses it, and how plan changes and payments work. Current prices and allowances are on the <a href="/pricing">Pricing page</a>.</p>
+{% if site.paid_plans is defined and not site.paid_plans %}
+<p class="notice">Starling is free during the beta: everyone is on the Free plan, and nothing is charged. The parts of this page about paid plans and payments apply once paid plans start.</p>
+{% endif %}
+
+<h2 id="what-uses">What uses a draft</h2>
+<ul>
+  <li>A draft is used when Starling returns a draft or an answer: a reply, quote, post or rewrite in X's composer, or an answer in the panel chat.</li>
+  <li>If you stop a draft or an answer after its text has started to appear, it still counts.</li>
+  <li>Nothing is used when a request fails, even partway through, or when you cancel before anything is shown.</li>
+  <li>Nothing is used when Starling returns no draft and no answer: when it holds a draft back because it did not pass its own checks, when it advises you to wait instead of posting, or when Enhance finds nothing to improve and keeps your words as they are.</li>
+</ul>
+
+<h2 id="checking">Checking your usage</h2>
+<p>Your <a href="/account">account page</a> shows how many drafts you have used this period, how many remain and when your allowance resets. The extension shows the same numbers.</p>
+
+<h2 id="running-out">When you run out</h2>
+<p>Drafting pauses until your allowance resets. There are no overage charges. You can upgrade at any time to keep drafting. When you get close to your limit, your account page and the extension tell you.</p>
+
+<h2 id="resets">When allowances reset</h2>
+<ul>
+  <li><strong>Free:</strong> every month, counted from the day you verified your email address.</li>
+  <li><strong>Paid plans:</strong> at the start of each billing period, once that period's payment has gone through.</li>
+</ul>
+
+<h2 id="fair-use">Fair use</h2>
+<p>Each plan also has a fair-use limit on the AI processing cost of an account's requests in a period. If an account reaches it before its drafts run out, drafting pauses until the allowance resets. It never adds charges.</p>
+
+<h2 id="rate-limits">Rate limits</h2>
+<p>Each plan allows a set number of requests per minute and per day, and one request at a time per account. A second request can wait briefly in line. If you go faster than your plan allows, Starling asks you to wait. Daily limits for each plan are on the <a href="/pricing">Pricing page</a>.</p>
+
+<h2 id="changing">Changing plans</h2>
+<ul>
+  <li><strong>Upgrade:</strong> choose a higher plan from <a href="/account/billing">Billing</a>. You pay the prorated difference for the rest of the current period, and the new plan applies as soon as that payment goes through, with extra drafts in proportion to the time left.</li>
+  <li><strong>Downgrade:</strong> the change is scheduled for the end of the current period. You keep your current plan until then, and you can undo the change before it happens.</li>
+  <li><strong>Cancel:</strong> you keep your paid plan until the end of the period you have paid for. After that your account moves to Free.</li>
+</ul>
+
+<h2 id="payments">Payments</h2>
+<p>Stripe processes all payments, and card numbers never reach Starling. From <a href="/account/billing">Billing</a> you can open Stripe's secure billing page to change your payment method or download invoices.</p>
+
+<h2 id="failed-payments">Failed payments</h2>
+<p>If a renewal payment fails, your account page shows a payment problem notice. Update your payment method to keep your plan. You keep paid access for a short grace period, but a new period's drafts are only added after the payment succeeds. If the payment is not fixed in time, the account moves to Free.</p>
+
+<h2 id="refunds">Refunds</h2>
+<p>See the <a href="/refunds">Refund policy</a>.</p>
+{% endblock %}

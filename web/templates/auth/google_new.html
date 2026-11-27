@@ -1,0 +1,38 @@
+{#- GET/POST /auth/google/new (auth/google_routes.py)
+    Someone chose "Continue with Google" on the sign-in page, and no Starling account uses that
+    Google account's address yet. One confirmation before an account is made, because the person
+    may simply have picked the wrong Google account.
+    Extra context: email (the Google account's address, in full: the person just chose it),
+    next (where to go after), errors (general "form").
+    POST fields: csrf_token. -#}
+{% extends "base.html" %}
+{% block title %}Create your Starling account · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, error_summary, google_mark with context %}
+<div class="narrow">
+  <header class="page-header">
+    <p class="eyebrow">New to Starling</p>
+    <h1>Create your account?</h1>
+    <p class="lead">There is no Starling account for this Google account yet.</p>
+  </header>
+  <div class="identity-card">
+    {{ google_mark() }}
+    <div>
+      <p class="identity-card-title">{{ email }}</p>
+      <p class="muted small">Google account</p>
+    </div>
+  </div>
+  <form class="form" method="post" action="/auth/google/new">
+    {{ csrf() }}
+    {{ error_summary(errors, []) }}
+    <p class="hint">By creating an account you confirm that you are at least 18 years old, agree to the <a href="/terms">Terms of Service</a> and confirm that you have read the <a href="/privacy">Privacy Policy</a>. You start on the Free plan. No card needed.</p>
+    <div class="button-row">
+      <button class="btn" type="submit">Create my account</button>
+      <a class="btn btn-secondary" href="/auth/google?next={{ next|urlencode }}" data-busy-link>Use a different Google account</a>
+    </div>
+  </form>
+  <p class="form-footer">Already have an account with another address? <a href="/login{% if next != '/account' %}?next={{ next|urlencode }}{% endif %}">Sign in with your email</a></p>
+</div>
+{% endblock %}

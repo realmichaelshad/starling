@@ -1,0 +1,260 @@
+{#- GET /account/billing
+    Extra context: state (CONTRACTS 6.2), plans (see pricing.html), invoices_url_available (bool),
+    returned_from (null, or where the customer just came back from on Stripe's pages: "home", "card",
+    "cancel", "upgrade"; the route has already re-read the subscription, so the state is current);
+    chosen_plan (null, or the paid plan picked on the pricing page before signing up: ?choose=<code>).
+    POST targets (all with csrf_token):
+      /billing/checkout        plan_code          (free account buying a paid plan)
+      /billing/upgrade         plan_code
+      /billing/downgrade       plan_code
+      /billing/downgrade/undo  (no fields)
+      /billing/resume          (no fields: keep a plan that is set to end)
+      /billing/portal          flow = payment_method_update | subscription_cancel | (empty for the portal home)
+    Each redirects (303) to Stripe or back here. -#}
+{% extends "_account_layout.html" %}
+{% block title %}Billing · Starling{% endblock %}
+{% block content %}
+{% from "_macros.html" import csrf, plan_name, plan_price, local_date with context %}
+{% set p = state.plan %}
+{% set u = state.usage %}
+{% set back = returned_from if returned_from is defined else none %}
+{% set status_labels = {"free": "Free plan", "active": "Active", "past_due": "Payment problem", "suspended": "Suspended"} %}
+{% set ns = namespace(current_amount=0, current=none, free=none, target=none) %}
+{% for plan in plans %}
+  {% if plan.code == p.code %}{% set ns.current_amount = plan.amount_cents %}{% set ns.current = plan %}{% endif %}
+  {% if plan.amount_cents == 0 and ns.free is none %}{% set ns.free = plan %}{% endif %}
+  {% if p.scheduled_change and plan.code == p.scheduled_change.plan_code %}{% set ns.target = plan %}{% endif %}
+{% endfor %}
+{% set cancelling = p.code != "free" and p.cancel_at %}
+{% set issue = p.payment_issue if p.payment_issue is defined and p.payment_issue else none %}
+{% set first_unfinished = (p.payment_problem or p.status == "past_due") and ((issue and issue.kind == "first_payment") or (not issue and ns.current_amount == 0)) %}
+{#- A free-only launch (no paid plan in the plans file) has nothing to sell yet: say so plainly. -#}
+{% set paid = namespace(n=0) %}
+{% for plan in plans if plan.amount_cents and plan.amount_cents > 0 %}{% set paid.n = paid.n + 1 %}{% endfor %}
+{% set free_only = paid.n == 0 and ns.current_amount == 0 %}
+<h1>Billing</h1>
+{% if free_only %}
+<p class="lead">Your plan. Starling is free during the beta, so nothing is charged. Paid plans come later, and this page will say so first.</p>
+{% else %}
+<p class="lead">Your plan, renewal and payment details. Payments are handled by Stripe, and card numbers never reach Starling.</p>
+{% endif %}
+
+{#- Back from Stripe's pages: say what happened, in the customer's terms. -#}
+{% if back == "cancel" and cancelling %}
+<div class="notice notice-success" data-billing-return="cancel">
+  <p class="notice-title">Your {{ p.name }} plan is cancelled</p>
+  <p>You keep it until {{ local_date(p.cancel_at) }}, and you will not be charged again.</p>
+</div>
+{% elif back == "cancel" %}
+<div class="notice" data-billing-return="cancel-kept">
+  <p>Nothing changed. Your {{ p.name }} plan continues{% if p.period_end %} and renews on {{ local_date(p.period_end) }}{% endif %}.</p>
+</div>
+{% elif back == "upgrade" and ns.current_amount > 0 and not p.payment_problem %}
+<div class="notice notice-success" data-billing-return="upgrade">
+  <p class="notice-title">You are on {{ p.name }}</p>
+  <p>You have {{ u.remaining|number }} {{ u.unit_label }} to use until {{ local_date(u.resets_at) }}.</p>
+</div>
+{% elif back == "card" and not p.payment_problem %}
+<div class="notice notice-success" data-billing-return="card">
+  <p>Your payment method is updated.</p>
+</div>
+{% endif %}
+
+{% set chosen = chosen_plan if chosen_plan is defined and chosen_plan else none %}
+{% if chosen and ns.current_amount == 0 and not p.payment_problem %}
+<div class="notice notice-success" data-billing-notice="chosen">
+  <p class="notice-title">You chose {{ chosen.name }}</p>
+  <p>{{ plan_price(chosen) }} for {{ chosen.monthly_credits|number }} {{ u.unit_label }} a month. You pay on Stripe's secure checkout and come straight back here. Cancel any time.</p>
+  <form method="post" action="/billing/checkout">
+    {{ csrf() }}
+    <input type="hidden" name="plan_code" value="{{ chosen.code }}">
+    <button class="btn" type="submit">Continue to payment</button>
+  </form>
+</div>
+{% endif %}
+
+{% if cancelling %}
+<div class="notice notice-warning" data-billing-notice="ending">
+  <p class="notice-title">Your {{ p.name }} plan ends on {{ local_date(p.cancel_at) }}</p>
+  <p>You will not be charged again. After that your account moves to {{ ns.free.name if ns.free else "Free" }}{% if ns.free %} ({{ ns.free.monthly_credits|number }} {{ u.unit_label }} a month){% endif %}. Changed your mind? Keep it and it renews as usual; to change plans, keep it first.</p>
+  <form method="post" action="/billing/resume">
+    {{ csrf() }}
+    <button class="btn" type="submit">Keep {{ p.name }}</button>
+  </form>
+</div>
+{% endif %}
+
+{% if p.payment_problem or p.status == "past_due" %}
+{#- Which payment needs the customer (CONTRACTS 6.2 `plan.payment_issue`). Three different situations
+    that must never share words: a FIRST payment that never finished (never charged, still on Free,
+    finished on the invoice's own page, which the checkout route redirects to), a RENEWAL that failed
+    inside the grace window (paid access continues) and one that LAPSED (on Free until it is paid).
+    Without the field, fall back on the plan: a free account can only have an unfinished first payment. -#}
+{% set issue_kind = issue.kind if issue else ("first_payment" if ns.current_amount == 0 else "renewal") %}
+{% set issue_plan = issue.plan_name if issue and issue.plan_name else none %}
+<div class="notice notice-error" data-payment-notice="{{ "first" if issue_kind == "first_payment" else issue_kind }}">
+  {% if issue_kind == "first_payment" %}
+  {#- Stripe's invoice page has no way back to Starling, so it opens in a new tab and this page
+      watches for the payment instead (static/js/billing-return.js). -#}
+  <div data-billing-poll data-status-url="/billing/status" data-initial-plan="{{ p.code }}" data-initial-status="{{ p.status }}" data-initial-problem="true" data-status-id="billing-status">
+  <p class="notice-title">Your {{ issue_plan ~ " " if issue_plan }}payment is not finished</p>
+  <p>You have not been charged, and you are still on Free. Finish paying on Stripe's secure page, which opens in a new tab; this page updates by itself as soon as the payment goes through.{% if issue and issue.plan_code %} Want a different plan? Choose it below and the unfinished payment is cancelled.{% endif %}</p>
+  {% if issue and issue.plan_code %}
+  <form method="post" action="/billing/checkout" target="_blank" rel="noopener" data-opens-elsewhere>
+    {{ csrf() }}
+    <input type="hidden" name="plan_code" value="{{ issue.plan_code }}">
+    <button class="btn" type="submit">Finish paying for {{ issue_plan }}</button>
+  </form>
+  {% else %}
+  <form method="post" action="/billing/portal" target="_blank" rel="noopener" data-opens-elsewhere>
+    {{ csrf() }}
+    <button class="btn" type="submit">Open Stripe's billing page</button>
+  </form>
+  {% endif %}
+  <p class="muted small" id="billing-status" role="status" aria-live="polite">Opens Stripe's secure payment page in a new tab.</p>
+  </div>
+  {% else %}
+  {% if issue_kind == "lapsed" %}
+  <p class="notice-title">Your {{ issue_plan ~ " " if issue_plan }}payment did not go through</p>
+  <p>The grace period has ended, so your account is on Free for now. Update your payment method and {{ issue_plan if issue_plan else "your plan" }} returns as soon as the payment succeeds.</p>
+  {% else %}
+  <p class="notice-title">Your last payment did not go through</p>
+  <p>Update your payment method to keep {{ p.name }}. You keep paid access for a short grace period, and a new period's {{ u.unit_label }} are added once the payment succeeds.</p>
+  {% endif %}
+  <form method="post" action="/billing/portal">
+    {{ csrf() }}
+    <input type="hidden" name="flow" value="payment_method_update">
+    <button class="btn" type="submit">Update payment method</button>
+  </form>
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="panel" aria-labelledby="current-title">
+  <h2 id="current-title">Current plan</h2>
+  <dl class="definition-list">
+    <dt>Plan</dt>
+    <dd data-plan="{{ p.code }}">{{ p.name }}{% if ns.current and ns.current.amount_cents > 0 %} · {{ plan_price(ns.current) }}{% endif %}</dd>
+    {% if p.status in ("past_due", "suspended") %}
+    <dt>Status</dt>
+    <dd>{{ status_labels.get(p.status, p.status|capitalize) }}</dd>
+    {% endif %}
+    {% if p.code != "free" %}
+    {% if cancelling %}
+    <dt>Ends on</dt>
+    <dd>{{ local_date(p.cancel_at) }}. You will not be charged again.</dd>
+    {% elif p.scheduled_change and ns.target %}
+    <dt>Renews on</dt>
+    <dd>{{ local_date(p.period_end) }} as {{ ns.target.name }}, {{ plan_price(ns.target) }}</dd>
+    {% else %}
+    <dt>Next payment</dt>
+    <dd>{% if ns.current and ns.current.amount_cents > 0 %}{{ ns.current.amount_cents|money(ns.current.currency) }} on {% endif %}{{ local_date(p.period_end) }}</dd>
+    {% endif %}
+    {% else %}
+    <dt>Allowance resets on</dt>
+    <dd>{{ local_date(u.resets_at) }}</dd>
+    {% endif %}
+  </dl>
+</section>
+
+{% if p.scheduled_change %}
+<section class="panel" aria-labelledby="scheduled-title">
+  <h2 id="scheduled-title">Scheduled change</h2>
+  <p>You move to <strong>{{ plan_name(plans, p.scheduled_change.plan_code) }}</strong> on {{ local_date(p.scheduled_change.effective_at) }}. Until then you keep {{ p.name }}.</p>
+  <form method="post" action="/billing/downgrade/undo">
+    {{ csrf() }}
+    <button class="btn btn-secondary" type="submit">Stay on {{ p.name }}</button>
+  </form>
+</section>
+{% endif %}
+
+{#- A plan that is set to end changes only after it is kept: the notice above says so. -#}
+{% if not cancelling and not free_only %}
+<section class="panel" aria-labelledby="change-title">
+  <h2 id="change-title">{{ "Choose a paid plan" if ns.current_amount == 0 else "Change plan" }}</h2>
+  <ul class="item-list">
+  {% for plan in plans if plan.code != p.code and plan.amount_cents > 0 %}
+    <li>
+      <div class="item-main">
+        <p class="item-title">{{ plan.name }}</p>
+        <p class="muted">{{ plan_price(plan) }} · {{ plan.monthly_credits|number }} {{ u.unit_label }} a month</p>
+      </div>
+      {% if first_unfinished and issue and issue.plan_code == plan.code %}
+      <p class="muted">Payment not finished (see above)</p>
+      {% elif ns.current_amount == 0 %}
+      <form method="post" action="/billing/checkout">
+        {{ csrf() }}
+        <input type="hidden" name="plan_code" value="{{ plan.code }}">
+        <button class="btn" type="submit">Choose {{ plan.name }}</button>
+      </form>
+      {% elif plan.amount_cents > ns.current_amount %}
+      <form method="post" action="/billing/upgrade">
+        {{ csrf() }}
+        <input type="hidden" name="plan_code" value="{{ plan.code }}">
+        <button class="btn" type="submit">Upgrade to {{ plan.name }}</button>
+      </form>
+      {% elif p.scheduled_change and p.scheduled_change.plan_code == plan.code %}
+      <p class="muted">Starts on {{ local_date(p.scheduled_change.effective_at) }}</p>
+      {% else %}
+      <form method="post" action="/billing/downgrade">
+        {{ csrf() }}
+        <input type="hidden" name="plan_code" value="{{ plan.code }}">
+        <button class="btn btn-secondary" type="submit">Switch to {{ plan.name }} on {{ local_date(p.period_end) }}</button>
+      </form>
+      {% endif %}
+    </li>
+  {% else %}
+    <li><p class="muted">There are no other paid plans.</p></li>
+  {% endfor %}
+  </ul>
+  {% if ns.current_amount == 0 %}
+  <p class="small muted">You pay on Stripe's secure checkout and come straight back here. Cancel any time. <a href="/pricing">Compare plans</a></p>
+  {% else %}
+  <p class="small muted">Upgrading charges only the difference for the days left in this period; Stripe shows the exact amount before you confirm. A lower plan starts at your next renewal. <a href="/pricing">Compare plans</a></p>
+  {% endif %}
+</section>
+{% endif %}
+
+{% if p.code != "free" and not cancelling %}
+<section class="panel" aria-labelledby="cancel-title">
+  <h2 id="cancel-title">Cancel subscription</h2>
+  <p>If you cancel, you keep {{ p.name }} until {{ local_date(p.period_end) }}. After that your account moves to Free and you are not charged again.</p>
+  <form method="post" action="/billing/portal">
+    {{ csrf() }}
+    <input type="hidden" name="flow" value="subscription_cancel">
+    <button class="btn btn-secondary" type="submit">Cancel subscription</button>
+  </form>
+</section>
+{% endif %}
+
+{% if p.code != "free" or invoices_url_available %}
+<section class="panel" aria-labelledby="payment-title">
+  <h2 id="payment-title">Payment method and invoices</h2>
+  <p>Stripe's secure billing page lets you change your card, update billing details and download invoices.</p>
+  <div class="button-row">
+    {% if p.code != "free" %}
+    <form method="post" action="/billing/portal">
+      {{ csrf() }}
+      <input type="hidden" name="flow" value="payment_method_update">
+      <button class="btn btn-secondary" type="submit">Update payment method</button>
+    </form>
+    {% endif %}
+    {% if invoices_url_available %}
+    <form method="post" action="/billing/portal">
+      {{ csrf() }}
+      <button class="btn btn-secondary" type="submit">View invoices and receipts</button>
+    </form>
+    {% endif %}
+  </div>
+</section>
+{% endif %}
+<p class="small muted">Questions about a charge? Read the <a href="/refunds">Refund policy</a> or <a href="/contact">contact us</a>.</p>
+{% endblock %}
+{% block scripts %}
+{#- Blocks do not share variables, so the unfinished-first-payment test is repeated here. -#}
+{% set sp = state.plan %}
+{% set sissue = sp.payment_issue if sp.payment_issue is defined and sp.payment_issue else none %}
+{% if (sp.payment_problem or sp.status == "past_due") and ((sissue and sissue.kind == "first_payment") or (not sissue and sp.code == "free")) %}
+<script src="{{ static('js/billing-return.js') }}" defer></script>
+{% endif %}
+{% endblock %}

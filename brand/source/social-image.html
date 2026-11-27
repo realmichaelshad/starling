@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Starling social image</title>
+<style>
+  @font-face { font-family: "Chakra Petch"; font-weight: 500; src: url("../../web/static/fonts/chakra-petch-500.woff2") format("woff2"); }
+  @font-face { font-family: "Chakra Petch"; font-weight: 600; src: url("../../web/static/fonts/chakra-petch-600.woff2") format("woff2"); }
+  html, body { margin: 0; width: 1200px; height: 630px; background: #000; overflow: hidden; }
+  .card {
+    position: relative; width: 1200px; height: 630px;
+    background: radial-gradient(120% 80% at 50% 0%, #0a0a09, #000 58%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .grain { position: absolute; inset: 0; background: url("../../web/static/img/grain.png"); opacity: .05; }
+  .label {
+    font: 600 17px/1 "Chakra Petch", sans-serif; letter-spacing: .42em; text-transform: uppercase;
+    color: #9a9d9f; margin: 0 0 44px; padding-left: .42em;
+  }
+  .mark { width: 860px; height: auto; display: block; }
+  .tag { font: 500 31px/1.2 "Chakra Petch", sans-serif; color: #dad7cf; margin: 46px 0 0; letter-spacing: .01em; }
+  .glint { position: absolute; width: 14px; height: 14px; fill: #9a9d9f; opacity: .55; }
+  .g1 { left: 108px; top: 126px; } .g2 { right: 132px; top: 162px; width: 10px; height: 10px; opacity: .4; }
+  .g3 { left: 154px; bottom: 150px; width: 9px; height: 9px; opacity: .35; } .g4 { right: 226px; bottom: 124px; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="grain"></div>
+  <svg class="glint g1" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint g2" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint g3" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <svg class="glint g4" viewBox="0 0 24 24"><path d="M12 2.5c.9 5.6 3.9 8.6 9.5 9.5-5.6.9-8.6 3.9-9.5 9.5-.9-5.6-3.9-8.6-9.5-9.5C8.1 11.1 11.1 8.1 12 2.5Z"/></svg>
+  <p class="label">A Chrome extension for X</p>
+  <img class="mark" src="../web/starling-wordmark.png" alt="Starling">
+  <p class="tag">Your voice. Your drafts. Your Post button.</p>
+</div>
+</body>
+</html>

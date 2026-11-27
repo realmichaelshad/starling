@@ -1,0 +1,46 @@
+# Starling plans. The pricing page, checkout, webhooks, usage enforcement, the
+# extension and the account pages all read this one file.
+#
+# Prices are defined in Stripe; `stripe_lookup_key` connects each paid plan to its
+# Stripe Price. `amount_cents`, `currency` and `interval` must match the Stripe Price:
+# the gateway checks this at startup in production and refuses to start on a mismatch.
+#
+# `cost_ceiling_usd` is a fair-use safeguard on estimated AI spend per billing period.
+# It sits well above typical use (about $0.004 per draft with the default model) and
+# below the plan's revenue, so a pathological account cannot run the service at a loss.
+
+[unit]
+name = "draft"
+label = "drafts"
+
+[plans.free]
+name = "Free"
+monthly_credits = 25
+cost_ceiling_usd = 0.30
+rate_per_minute = 3
+rate_per_day = 10
+public = true
+
+[plans.starter]
+name = "Starter"
+monthly_credits = 250
+stripe_lookup_key = "starling_starter_monthly_usd"
+amount_cents = 900
+currency = "usd"
+interval = "month"
+cost_ceiling_usd = 4.50
+rate_per_minute = 6
+rate_per_day = 60
+public = true
+
+[plans.pro]
+name = "Pro"
+monthly_credits = 800
+stripe_lookup_key = "starling_pro_monthly_usd"
+amount_cents = 1900
+currency = "usd"
+interval = "month"
+cost_ceiling_usd = 9.00
+rate_per_minute = 10
+rate_per_day = 150
+public = true

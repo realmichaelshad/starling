@@ -1,0 +1,58 @@
+{
+ "_note": "Invented pages and stories on reserved example domains, served by the world service only in e2e runs (STARLING_WORLD_FIXTURES with STARLING_WORLD_OFFLINE; production refuses both). Every figure here is test data, not a fact.",
+ "pages": {
+  "https://research.example.org/inference-price-index-2026": {
+   "title": "Inference Price Index 2026: prices per token fell, spend per task did not",
+   "published": "2026-09-18",
+   "text": "Across the 14 hosted models the index tracks, the median price per million output tokens fell 38% between January and September 2026.\n\nOver the same period the median spend per completed agent task rose 12%, because the tasks used about 1.8 times as many tokens: longer contexts, more tool calls and more retries.\n\nThe index's authors say teams comparing providers should compare the cost of a finished task, not the price of a token."
+  },
+  "https://research.example.org/saas-pricing-pages-study": {
+   "title": "What 400 B2B SaaS pricing pages have in common",
+   "published": "2026-09-16",
+   "text": "The study reviewed 400 pricing pages of B2B SaaS companies in August 2026.\n\n61% offered a free trial and 23% a free plan. Pages with three tiers converted trial sign-ups 17% better than pages with five or more tiers.\n\nOnly 9% said on the page what happens when a customer outgrows their tier, and those pages had the lowest share of support questions about billing."
+  },
+  "https://research.example.org/protein-timing-review": {
+   "title": "Review: total daily protein matters more than timing for muscle growth",
+   "published": "2026-09-19",
+   "text": "The review pooled 32 trials of adults doing resistance training.\n\nTotal daily protein, about 1.6 g per kg of body weight, explained most of the difference in muscle gain between groups. Spreading it over three or four meals added a small benefit; the timing of a single post-workout shake made no measurable difference.\n\nThe authors conclude that for most people the practical advice is to hit a daily total first and worry about timing last."
+  }
+ },
+ "news": [
+  {"title": "Open-weight model matches hosted rivals on a public evals suite at a fraction of the inference cost",
+   "url": "https://news.example.com/open-weight-evals-inference-cost", "source": "Example AI News",
+   "summary": "An open-weight model scored within two points of the leading hosted models on a public evals suite while costing about a tenth as much to serve, according to its developers.",
+   "published_ago_s": 10800, "points": 240, "lane": "ai"},
+  {"title": "Survey: retries and tool calls, not the model, drive most LLM latency in production",
+   "url": "https://news.example.com/llm-latency-survey", "source": "Example Dev Weekly",
+   "summary": "A survey of 300 teams running LLM apps found that retries and tool calls account for most of their p95 latency; model inference itself was the largest share for fewer than a third.",
+   "published_ago_s": 21600, "points": 180, "lane": "ai"},
+  {"title": "Cloud provider cuts batch inference prices for ML infrastructure teams",
+   "url": "https://news.example.com/batch-inference-prices", "source": "Example Cloud Report",
+   "summary": "A large cloud provider cut prices for batch inference jobs by 30% this week, aimed at ML infrastructure teams running evals and offline workloads.",
+   "published_ago_s": 43200, "points": 95, "lane": "ai"},
+  {"title": "Bootstrapped SaaS founders who raised prices this year saw churn hold steady, survey finds",
+   "url": "https://news.example.com/bootstrapped-saas-pricing-survey", "source": "Example SaaS Journal",
+   "summary": "A survey of 250 bootstrapped B2B SaaS founders found that most who raised prices in 2026 saw no rise in churn; the most common regret was waiting too long.",
+   "published_ago_s": 14400, "points": 130},
+  {"title": "Support-led growth: small SaaS companies turn support tickets into their roadmap",
+   "url": "https://news.example.com/support-led-saas", "source": "Example Founder Notes",
+   "summary": "Several profitable small SaaS businesses describe reading every support ticket as their main source of product research, and cutting churn by fixing what the tickets name.",
+   "published_ago_s": 36000, "points": 70},
+  {"title": "Payments provider adds simpler annual plans for small business subscriptions",
+   "url": "https://news.example.com/annual-plans-small-business", "source": "Example Fintech Daily",
+   "summary": "A payments provider launched a simpler way for small businesses to offer annual plans, citing lower churn for annual customers.",
+   "published_ago_s": 50400, "points": 60},
+  {"title": "New review busts the meal-frequency myth: total protein beats eating every three hours",
+   "url": "https://news.example.com/meal-frequency-myth", "source": "Example Health News",
+   "summary": "A review of nutrition trials found no metabolic benefit from eating every three hours; total daily protein and calories mattered far more, a finding that busts a long-running fitness myth.",
+   "published_ago_s": 12600, "points": 150},
+  {"title": "Strength training twice a week linked to longer life in large study",
+   "url": "https://news.example.com/strength-training-study", "source": "Example Science Daily",
+   "summary": "Adults who did strength training at least twice a week had lower mortality over ten years than those who did none, in a large observational study; the benefit held for beginners who started late.",
+   "published_ago_s": 25200, "points": 110},
+  {"title": "Walking counts: daily steps study backs practical training advice for busy people",
+   "url": "https://news.example.com/daily-steps-study", "source": "Example Wellness Report",
+   "summary": "A study of daily step counts found health benefits levelling off around 7,000 steps a day, supporting practical nutrition advice and training plans built around walking for busy people.",
+   "published_ago_s": 39600, "points": 85}
+ ]
+}

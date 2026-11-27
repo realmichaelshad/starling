@@ -1,0 +1,38 @@
+{#- GET/POST /reset-password (auth/routes.py)
+    Extra context: token_valid (bool), token ("" when invalid), errors (dict; fields password,
+    password_confirm; general "form"). POST fields: csrf_token, token, password, password_confirm. -#}
+{% extends "base.html" %}
+{% block title %}Choose a new password · Starling{% endblock %}
+{% block robots %}noindex, nofollow{% endblock %}
+{% block referrer %}no-referrer{% endblock %}
+{% block body_class %}single{% endblock %}
+{% block nav_cta %}{% endblock %}
+{% block main %}
+{% from "_macros.html" import csrf, error_summary, input_field with context %}
+<div class="narrow">
+  {% if token_valid %}
+  <header class="page-header">
+    <h1>Choose a new password</h1>
+    <p class="lead">Saving signs you in here and signs you out everywhere else. The Starling extension is disconnected in every browser: in its panel, choose Sign in to reconnect.</p>
+  </header>
+  <form class="form" method="post" action="/reset-password" novalidate>
+    {{ csrf() }}
+    <input type="hidden" name="token" value="{{ token }}">
+    {{ error_summary(errors, ["password", "password_confirm"]) }}
+    {#- One field: the Show button lets people check what they typed, which a second field only guesses at. #}
+    {{ input_field("password", "New password", type="password", autocomplete="new-password", errors=errors, hint="At least 10 characters. A few random words work well.", autofocus=true) }}
+    <div><button class="btn" type="submit">Save new password</button></div>
+  </form>
+  {% else %}
+  <header class="page-header">
+    <p class="eyebrow">Reset your password</p>
+    <h1>This reset link has expired or was already used</h1>
+    <p class="lead">Reset links work once and expire after 60 minutes.</p>
+  </header>
+  <div class="button-row">
+    <a class="btn" href="/forgot-password">Get a new link</a>
+    <a class="btn btn-secondary" href="/login">Back to sign in</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

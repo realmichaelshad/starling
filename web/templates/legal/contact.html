@@ -1,0 +1,23 @@
+{#- GET /contact  Extra context: subprocessors. site.support_email may still be a placeholder. -#}
+{% extends "_legal_layout.html" %}
+{% block title %}Contact · Starling{% endblock %}
+{% block description %}How to reach Starling support, send a privacy request or report a security issue.{% endblock %}
+{% block eyebrow %}Support{% endblock %}
+{% block heading %}Contact{% endblock %}
+{% block effective %}{% endblock %}
+{% block content %}
+{% from "_macros.html" import legal_email with context %}
+{% set L = legal_values(site.legal) %}
+<h2 id="support">Help with Starling</h2>
+<p>Email {{ legal_email(site.support_email) }}. Tell us the email address on your account, what you were doing and any message the extension showed. Never send your password.</p>
+<p>Many answers are already in the <a href="/docs/troubleshooting">Troubleshooting guide</a>.</p>
+
+<h2 id="privacy">Privacy requests</h2>
+<p>For questions about your personal information, or to use your privacy rights, contact {{ legal_email(L.OPERATOR_PRIVACY_CONTACT) }}. You can export or delete your data yourself from <a href="/account/data">Your data</a>.</p>
+
+<h2 id="security">Security reports</h2>
+<p>If you have found a security problem, follow the instructions in <a href="/.well-known/security.txt">security.txt</a>.</p>
+
+<h2 id="company">Company details</h2>
+<p>{{ L.OPERATOR_COMPANY_NAME|placeholders }}<br>{{ L.OPERATOR_REGISTERED_ADDRESS|placeholders }}<br>Email: {{ legal_email(L.OPERATOR_CONTACT_EMAIL) }}</p>
+{% endblock %}
